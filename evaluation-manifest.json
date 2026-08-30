@@ -9,26 +9,26 @@
   "pre_event_materials": [],
   "sample_data": {
     "loads_published_fixture": true,
-    "method": "TODO: file upload / paste JSON / manual entry",
-    "reset_instructions": "TODO: explain how judges restore the initial data."
+    "method": "One click on 'Load published sample data' loads the bundled fixture; 'Upload JSON' accepts any file in the same P01 shape, including unpublished cases. A case picker switches between the 25 cases.",
+    "reset_instructions": "Press 'Reset' in the Sample data panel. It clears all cuts and jobs and restores 09:00-21:00 working hours. State lives in localStorage under 'lsh26-t033-p01/state/v1', so clearing site data has the same effect."
   },
-  "problem_solving_method": "TODO: briefly explain the approach and why the team chose it.",
+  "problem_solving_method": "The four items are one hard scheduling rule (a grid job must never touch a power cut) plus the cost of the resulting plan (total generator minutes). All scheduling logic is kept in plain TypeScript in src/domain/ with no React, so it can be tested directly and read without running anything. The interface stores only the working hours, the cuts and the jobs; the plan is derived on every render and never stored, so the R4 total cannot drift from what is on screen. Jobs are placed most-constrained first: grid jobs, then generator-capable jobs, then jobs needing no power, which are parked inside cuts on purpose to keep cut-free time for jobs that need it.",
   "requirements": {
     "R1": {
-      "status": "not_attempted",
-      "evidence": "Enter today's power cut times as start/end and show them on a 24-hour timeline"
+      "status": "complete",
+      "evidence": "Enter power cuts as start and end times, drawn on the 24-hour timeline. src/components/Inputs.tsx (CutsPanel), src/components/Timeline.tsx"
     },
     "R2": {
-      "status": "not_attempted",
-      "evidence": "Add jobs with a name, duration in minutes and a power need (grid / generator / none)"
+      "status": "complete",
+      "evidence": "Add jobs with name, minutes and power need (grid, generator, none). src/components/Inputs.tsx (JobsPanel)"
     },
     "R3": {
-      "status": "not_attempted",
-      "evidence": "Place jobs automatically so grid jobs never fall inside a cut; show the plan beside the cut bars"
+      "status": "complete",
+      "evidence": "Automatic placement with grid jobs never inside a cut; plan row sits directly under the cut row on the same scale. src/domain/schedule.ts, src/components/Timeline.tsx, src/components/PlanPanel.tsx"
     },
     "R4": {
-      "status": "not_attempted",
-      "evidence": "Show total generator minutes, updating as soon as a job is added or removed"
+      "status": "complete",
+      "evidence": "Total generator minutes card, recomputed from state on every add or remove. src/App.tsx, src/components/Timeline.tsx (GeneratorSummary)"
     }
   },
   "team_members": [
@@ -52,16 +52,27 @@
     }
   ],
   "major_design_decisions": [
-    "TODO: decision and short reason"
+    "One worktop: jobs run one at a time and never overlap, because the problem gives a single timeline and no count of machines or staff.",
+    "Jobs are not split across a cut; a 90 minute job needs 90 uninterrupted minutes.",
+    "Generator minutes count only the time a generator-capable job actually spends inside a cut, so the number means fuel rather than duration.",
+    "A generator job takes the slot overlapping the cuts by the least, not simply the earliest slot, because that overlap is exactly what R4 reports.",
+    "Jobs needing no power are placed inside cuts on purpose, keeping scarce cut-free time for grid jobs.",
+    "An unplaceable job is listed with the reason and the largest gap available, never hidden and never placed illegally.",
+    "The plan is derived from state on every render and never stored, so the R4 total cannot go stale.",
+    "Overlapping or touching cuts are merged, and parts of a cut outside opening hours are dropped."
   ],
   "known_limitations": [
-    "TODO: known limitation or unfinished behaviour"
+    "The scheduler is greedy, not exhaustive: it uses a fixed placement order rather than searching every arrangement, so an adversarial input could in principle fit one more job or save a few generator minutes.",
+    "Jobs cannot be dragged or repositioned by hand; the plan is computed.",
+    "One day is modelled. An overnight cut is split correctly but work is not carried into the next day.",
+    "No print or export of the plan.",
+    "State is per browser via localStorage, so it is not shared between devices and a private window starts empty."
   ],
   "ai_tools_used": [
     {
       "tool": "Claude (Anthropic), via Claude Code",
-      "used_for": "Repository scaffolding, implementation and review during the event window.",
-      "how_output_was_verified": "Code was read by the team and tested against the published fixture in sample-data/."
+      "used_for": "Repository scaffolding, the scheduling engine in src/domain/, the interface in src/components/, both test suites and the documentation.",
+      "how_output_was_verified": "The team read the code, ran the full suite of 50 tests including all 25 published fixture cases, and checked each of the four required items by hand in the running application."
     }
   ],
   "licenses_file": "LICENSES.md",
