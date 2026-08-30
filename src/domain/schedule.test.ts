@@ -58,9 +58,30 @@ function assertPlanIsValid(plan: Plan): void {
     expect(covered).toBe(placement.end - placement.start);
   }
 
-  // One worktop: placed jobs never overlap each other.
-  for (let i = 1; i < sorted.length; i += 1) {
-    expect(sorted[i]!.start).toBeGreaterThanOrEqual(sorted[i - 1]!.end);
+  // Each machine runs one job at a time: no two placements on the same
+  // machine may overlap. Different machines may of course run in parallel.
+  for (let machine = 0; machine < plan.machines; machine += 1) {
+    const lane = sorted.filter((placement) => placement.machine === machine);
+    for (let i = 1; i < lane.length; i += 1) {
+      expect(lane[i]!.start).toBeGreaterThanOrEqual(lane[i - 1]!.end);
+    }
+  }
+
+  // Every placement respects the job's own ready and promised times.
+  for (const placement of sorted) {
+    expect(placement.machine).toBeGreaterThanOrEqual(0);
+    expect(placement.machine).toBeLessThan(plan.machines);
+    if (placement.job.readyAt != null) {
+      expect(placement.start).toBeGreaterThanOrEqual(placement.job.readyAt);
+    }
+    if (placement.job.dueBy != null) {
+      expect(placement.end).toBeLessThanOrEqual(placement.job.dueBy);
+    }
+  }
+
+  // The fuel ceiling is never broken.
+  if (plan.generatorBudgetMinutes !== null) {
+    expect(plan.totalGeneratorMinutes).toBeLessThanOrEqual(plan.generatorBudgetMinutes);
   }
 
   // Every job is accounted for exactly once.
@@ -357,5 +378,164 @@ describe('the 25 published fixture cases', () => {
         expect(entry.job.minutes).toBeGreaterThan(0);
       }
     }
+  });
+});
+
+
+describe('promised times and ready times', () => {
+  it('finishes a job before the time it was promised', () => {
+    const plan = buildPlan({
+      window: window('09:00', '18:00'),
+      cuts: [],
+      jobs: [
+        { ...job('Filler', 240, 'none') },
+        { ...job('Wedding cards', 60, 'grid'), dueBy: at('11:00') },
+      ],
+    });
+
+    const cards = placementOf(plan, 'Wedding cards');
+    expect(cards).toBeDefined();
+    expect(cards!.end).toBeLessThanOrEqual(at('11:00'));
+    expect(cards!.slackMinutes).toBeGreaterThanOrEqual(0);
+    assertPlanIsValid(plan);
+  });
+
+  it('reports a job that cannot be finished in time instead of placing it late', () => {
+    const plan = buildPlan({
+      window: window('09:00', '18:00'),
+      cuts: [],
+      jobs: [{ ...job('Impossible promise', 120, 'grid'), dueBy: at('10:00') }],
+    });
+
+    expect(plan.placements).toHaveLength(0);
+    expect(plan.unplaced[0]!.reason).toContain('only 60');
+    assertPlanIsValid(plan);
+  });
+
+  it('never starts a job before its material is ready', () => {
+    const plan = buildPlan({
+      window: window('09:00', '18:00'),
+      cuts: [],
+      jobs: [{ ...job('Awaiting artwork', 60, 'grid'), readyAt: at('14:00') }],
+    });
+
+    expect(placementOf(plan, 'Awaiting artwork')?.start).toBe(at('14:00'));
+    assertPlanIsValid(plan);
+  });
+
+  it('orders by earliest promised time, and urgent work ahead of that', () => {
+    const plan = buildPlan({
+      window: window('09:00', '12:00'),
+      cuts: [],
+      jobs: [
+        { ...job('Due late', 60, 'grid'), dueBy: at('12:00') },
+        { ...job('Due soon', 60, 'grid'), dueBy: at('11:00') },
+        { ...job('Rush order', 60, 'grid'), urgent: true, dueBy: at('12:00') },
+      ],
+    });
+
+    expect(placementOf(plan, 'Rush order')?.start).toBe(at('09:00'));
+    expect(placementOf(plan, 'Due soon')?.start).toBe(at('10:00'));
+    expect(placementOf(plan, 'Due late')?.start).toBe(at('11:00'));
+    assertPlanIsValid(plan);
+  });
+
+  it('rejects a job whose ready and promised times cannot both hold', () => {
+    const plan = buildPlan({
+      window: window('09:00', '18:00'),
+      cuts: [],
+      jobs: [{ ...job('Contradiction', 30, 'grid'), readyAt: at('15:00'), dueBy: at('14:00') }],
+    });
+
+    expect(plan.unplaced[0]!.reason).toContain('no usable window');
+  });
+});
+
+describe('more than one machine', () => {
+  it('runs jobs in parallel across machines', () => {
+    const plan = buildPlan({
+      window: window('09:00', '11:00'),
+      cuts: [],
+      machines: 2,
+      jobs: [job('A', 120, 'grid'), job('B', 120, 'grid')],
+    });
+
+    expect(plan.placements).toHaveLength(2);
+    expect(plan.unplaced).toHaveLength(0);
+    expect(new Set(plan.placements.map((p) => p.machine)).size).toBe(2);
+    expect(plan.capacityMinutes).toBe(240);
+    assertPlanIsValid(plan);
+  });
+
+  it('fills the first machine before opening a second', () => {
+    const plan = buildPlan({
+      window: window('09:00', '17:00'),
+      cuts: [],
+      machines: 3,
+      jobs: [job('Only job', 60, 'grid')],
+    });
+
+    expect(placementOf(plan, 'Only job')?.machine).toBe(0);
+    assertPlanIsValid(plan);
+  });
+
+  it('is unchanged from a single machine when only one is available', () => {
+    const input = {
+      window: window('09:00', '20:00'),
+      cuts: [cut('11:00', '13:00')],
+      jobs: [job('A', 90, 'grid'), job('B', 45, 'generator'), job('C', 30, 'none')],
+    };
+
+    expect(buildPlan({ ...input, machines: 1 })).toEqual(buildPlan(input));
+    assertPlanIsValid(buildPlan(input));
+  });
+
+  it('clamps a nonsense machine count to something usable', () => {
+    expect(buildPlan({ window: window('09:00', '10:00'), cuts: [], jobs: [], machines: 0 }).machines).toBe(1);
+    expect(buildPlan({ window: window('09:00', '10:00'), cuts: [], jobs: [], machines: 99 }).machines).toBe(8);
+  });
+});
+
+describe('the generator fuel budget', () => {
+  it('refuses a slot that would break the budget', () => {
+    const plan = buildPlan({
+      window: window('09:00', '11:00'),
+      cuts: [cut('09:00', '11:00')],
+      generatorBudgetMinutes: 30,
+      jobs: [job('Needs an hour on generator', 60, 'generator')],
+    });
+
+    expect(plan.placements).toHaveLength(0);
+    expect(plan.unplaced[0]!.reason).toContain('generator minutes still in budget');
+    expect(plan.totalGeneratorMinutes).toBe(0);
+    assertPlanIsValid(plan);
+  });
+
+  it('spends the budget on the jobs it can afford and reports the rest', () => {
+    const plan = buildPlan({
+      window: window('09:00', '13:00'),
+      cuts: [cut('09:00', '13:00')],
+      generatorBudgetMinutes: 60,
+      jobs: [job('First', 60, 'generator'), job('Second', 60, 'generator')],
+    });
+
+    expect(plan.totalGeneratorMinutes).toBe(60);
+    expect(plan.generatorBudgetRemaining).toBe(0);
+    expect(plan.placements).toHaveLength(1);
+    expect(plan.unplaced).toHaveLength(1);
+    assertPlanIsValid(plan);
+  });
+
+  it('treats no budget as unlimited', () => {
+    const plan = buildPlan({
+      window: window('09:00', '11:00'),
+      cuts: [cut('09:00', '11:00')],
+      jobs: [job('Long generator job', 120, 'generator')],
+    });
+
+    expect(plan.generatorBudgetMinutes).toBeNull();
+    expect(plan.generatorBudgetRemaining).toBeNull();
+    expect(plan.totalGeneratorMinutes).toBe(120);
+    assertPlanIsValid(plan);
   });
 });

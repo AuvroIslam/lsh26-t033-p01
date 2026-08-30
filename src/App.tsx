@@ -3,7 +3,14 @@ import { Zap } from 'lucide-react';
 
 import { buildPlan } from './domain/schedule';
 import { GeneratorSummary, Timeline } from './components/Timeline';
-import { CutsPanel, DataPanel, IconTile, JobsPanel, WindowPanel } from './components/Inputs';
+import {
+  CutsPanel,
+  DataPanel,
+  IconTile,
+  JobsPanel,
+  ShopPanel,
+  WindowPanel,
+} from './components/Inputs';
 import { PlanPanel } from './components/PlanPanel';
 import { loadState, reducer, saveState } from './state';
 
@@ -22,8 +29,17 @@ export default function App() {
         window: { start: state.windowStart, end: state.windowEnd },
         cuts: state.cuts,
         jobs: state.jobs,
+        machines: state.machines,
+        generatorBudgetMinutes: state.generatorBudget,
       }),
-    [state.windowStart, state.windowEnd, state.cuts, state.jobs],
+    [
+      state.windowStart,
+      state.windowEnd,
+      state.cuts,
+      state.jobs,
+      state.machines,
+      state.generatorBudget,
+    ],
   );
 
   return (
@@ -57,6 +73,7 @@ export default function App() {
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <div className="space-y-5">
             <WindowPanel state={state} dispatch={dispatch} />
+            <ShopPanel state={state} dispatch={dispatch} />
             <CutsPanel cuts={state.cuts} dispatch={dispatch} />
             <JobsPanel jobs={state.jobs} dispatch={dispatch} />
             <DataPanel state={state} dispatch={dispatch} />

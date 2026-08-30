@@ -6,6 +6,10 @@ import type { FixtureCase } from './domain/fixture';
 export interface AppState {
   windowStart: number;
   windowEnd: number;
+  /** How many jobs the shop can run at once. */
+  machines: number;
+  /** Fuel ceiling in generator minutes, or null for an unlimited generator. */
+  generatorBudget: number | null;
   cuts: PowerCut[];
   jobs: Job[];
   /** Which fixture case is loaded, shown so judges can see what they are looking at. */
@@ -14,9 +18,19 @@ export interface AppState {
 
 export type Action =
   | { type: 'setWindow'; start: number; end: number }
+  | { type: 'setMachines'; machines: number }
+  | { type: 'setGeneratorBudget'; minutes: number | null }
   | { type: 'addCut'; start: number; end: number }
   | { type: 'removeCut'; id: string }
-  | { type: 'addJob'; name: string; minutes: number; power: PowerNeed }
+  | {
+      type: 'addJob';
+      name: string;
+      minutes: number;
+      power: PowerNeed;
+      readyAt: number | null;
+      dueBy: number | null;
+      urgent: boolean;
+    }
   | { type: 'removeJob'; id: string }
   | { type: 'loadCase'; fixtureCase: FixtureCase }
   | { type: 'reset' };
@@ -29,6 +43,8 @@ const time = (value: string): number => parseTime(value) ?? 0;
 export const initialState: AppState = {
   windowStart: time('09:00'),
   windowEnd: time('21:00'),
+  machines: 1,
+  generatorBudget: null,
   cuts: [],
   jobs: [],
   loadedCaseId: null,
@@ -43,6 +59,12 @@ export function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'setWindow':
       return { ...state, windowStart: action.start, windowEnd: action.end };
+
+    case 'setMachines':
+      return { ...state, machines: Math.max(1, Math.min(8, Math.round(action.machines))) };
+
+    case 'setGeneratorBudget':
+      return { ...state, generatorBudget: action.minutes };
 
     case 'addCut': {
       // A cut running past midnight is stored as the one or two real spans it
@@ -65,7 +87,15 @@ export function reducer(state: AppState, action: Action): AppState {
         ...state,
         jobs: [
           ...state.jobs,
-          { id: newId(), name: action.name, minutes: action.minutes, power: action.power },
+          {
+            id: newId(),
+            name: action.name,
+            minutes: action.minutes,
+            power: action.power,
+            readyAt: action.readyAt,
+            dueBy: action.dueBy,
+            urgent: action.urgent,
+          },
         ],
       };
 
@@ -74,6 +104,7 @@ export function reducer(state: AppState, action: Action): AppState {
 
     case 'loadCase':
       return {
+        ...state,
         windowStart: action.fixtureCase.window.start,
         windowEnd: action.fixtureCase.window.end,
         cuts: action.fixtureCase.cuts.map((cut) => ({ ...cut, id: newId() })),
@@ -112,6 +143,8 @@ export function loadState(): AppState {
     return {
       windowStart: candidate.windowStart,
       windowEnd: candidate.windowEnd,
+      machines: typeof candidate.machines === 'number' ? candidate.machines : 1,
+      generatorBudget: typeof candidate.generatorBudget === 'number' ? candidate.generatorBudget : null,
       cuts: candidate.cuts as PowerCut[],
       jobs: candidate.jobs as Job[],
       loadedCaseId: candidate.loadedCaseId ?? null,

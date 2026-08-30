@@ -1,5 +1,12 @@
 import { useRef, useState } from 'react';
-import { AlertTriangle, ClipboardList, Clock, Database, type LucideIcon } from 'lucide-react';
+import {
+  AlertTriangle,
+  ClipboardList,
+  Clock,
+  Database,
+  Factory,
+  type LucideIcon,
+} from 'lucide-react';
 
 import { formatDuration, formatTime, parseTime } from '../domain/time';
 import { parseFixture, FixtureError, type FixtureCase } from '../domain/fixture';
@@ -133,6 +140,73 @@ export function WindowPanel({ state, dispatch }: { state: AppState; dispatch: (a
   );
 }
 
+/**
+ * A real shop runs more than one machine and buys diesel by the litre, so both
+ * belong in the plan: machines set how much can run at once, and the fuel
+ * budget caps the generator minutes the plan is allowed to spend.
+ */
+export function ShopPanel({
+  state,
+  dispatch,
+}: {
+  state: AppState;
+  dispatch: (a: Action) => void;
+}) {
+  const [budgetText, setBudgetText] = useState(
+    state.generatorBudget === null ? '' : String(state.generatorBudget),
+  );
+
+  return (
+    <Panel
+      title="Shop capacity"
+      description="How much can run at once, and how much generator time you can afford."
+      icon={Factory}
+    >
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className={labelClass}>
+          Machines
+          <input
+            type="number"
+            min={1}
+            max={8}
+            step={1}
+            className={`mt-1 ${fieldClass}`}
+            value={state.machines}
+            onChange={(event) => {
+              const value = Number(event.target.value);
+              if (Number.isFinite(value)) dispatch({ type: 'setMachines', machines: value });
+            }}
+          />
+        </label>
+        <label className={labelClass}>
+          Generator budget
+          <input
+            type="number"
+            min={0}
+            step={15}
+            placeholder="Unlimited"
+            className={`mt-1 ${fieldClass}`}
+            value={budgetText}
+            onChange={(event) => {
+              const raw = event.target.value;
+              setBudgetText(raw);
+              const value = Number(raw);
+              dispatch({
+                type: 'setGeneratorBudget',
+                minutes: raw.trim() === '' || !Number.isFinite(value) || value < 0 ? null : value,
+              });
+            }}
+          />
+        </label>
+      </div>
+      <p className="mt-2 text-xs text-ink-faint">
+        Leave the budget empty for an unlimited generator. With a budget set, a job is left
+        unscheduled rather than burning fuel you do not have.
+      </p>
+    </Panel>
+  );
+}
+
 /** R1, second half: entering power cuts as a start and an end time. */
 export function CutsPanel({
   cuts,
@@ -229,6 +303,9 @@ export function JobsPanel({ jobs, dispatch }: { jobs: Job[]; dispatch: (a: Actio
   const [name, setName] = useState('');
   const [minutes, setMinutes] = useState('60');
   const [power, setPower] = useState<PowerNeed>('grid');
+  const [readyAt, setReadyAt] = useState('');
+  const [dueBy, setDueBy] = useState('');
+  const [urgent, setUrgent] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const submit = (event: React.FormEvent) => {
@@ -243,9 +320,36 @@ export function JobsPanel({ jobs, dispatch }: { jobs: Job[]; dispatch: (a: Actio
       setError('Duration must be a positive number of minutes.');
       return;
     }
+
+    const ready = readyAt.trim() === '' ? null : parseTime(readyAt);
+    const due = dueBy.trim() === '' ? null : parseTime(dueBy);
+    if (ready === null && readyAt.trim() !== '') {
+      setError('Ready time must be a 24-hour time such as 14:00.');
+      return;
+    }
+    if (due === null && dueBy.trim() !== '') {
+      setError('Promised time must be a 24-hour time such as 17:00.');
+      return;
+    }
+    if (ready !== null && due !== null && due <= ready) {
+      setError('The promised time must be after the ready time.');
+      return;
+    }
+
     setError(null);
-    dispatch({ type: 'addJob', name: trimmed, minutes: Math.round(duration), power });
+    dispatch({
+      type: 'addJob',
+      name: trimmed,
+      minutes: Math.round(duration),
+      power,
+      readyAt: ready,
+      dueBy: due,
+      urgent,
+    });
     setName('');
+    setReadyAt('');
+    setDueBy('');
+    setUrgent(false);
   };
 
   return (
@@ -291,6 +395,37 @@ export function JobsPanel({ jobs, dispatch }: { jobs: Job[]; dispatch: (a: Actio
             ))}
           </select>
         </label>
+        <div className="flex flex-wrap gap-2">
+          <label className={`min-w-24 flex-1 ${labelClass}`}>
+            Ready from
+            <input
+              type="time"
+              step={900}
+              className={`mt-1 ${fieldClass}`}
+              value={readyAt}
+              onChange={(event) => setReadyAt(event.target.value)}
+            />
+          </label>
+          <label className={`min-w-24 flex-1 ${labelClass}`}>
+            Promised by
+            <input
+              type="time"
+              step={900}
+              className={`mt-1 ${fieldClass}`}
+              value={dueBy}
+              onChange={(event) => setDueBy(event.target.value)}
+            />
+          </label>
+        </div>
+        <label className="flex items-center gap-2.5 text-sm font-semibold text-ink-soft">
+          <input
+            type="checkbox"
+            checked={urgent}
+            onChange={(event) => setUrgent(event.target.checked)}
+            className="h-4 w-4 rounded accent-accent"
+          />
+          Rush order, scheduled ahead of everything else
+        </label>
         <button type="submit" className={buttonClass}>
           Add job
         </button>
@@ -302,9 +437,19 @@ export function JobsPanel({ jobs, dispatch }: { jobs: Job[]; dispatch: (a: Actio
           {jobs.map((job) => (
             <li key={job.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
               <span className="min-w-0">
-                <span className="block truncate font-semibold text-ink">{job.name}</span>
+                <span className="flex items-center gap-2">
+                  <span className="truncate font-semibold text-ink">{job.name}</span>
+                  {job.urgent && (
+                    <span className="shrink-0 rounded-full bg-cut-soft px-2 py-0.5 text-[10px] font-bold text-cut-deep">
+                      RUSH
+                    </span>
+                  )}
+                </span>
                 <span className="text-xs font-medium text-ink-faint">
-                  {formatDuration(job.minutes)} · {POWER_OPTIONS.find((o) => o.value === job.power)?.label}
+                  {formatDuration(job.minutes)} ·{' '}
+                  {POWER_OPTIONS.find((o) => o.value === job.power)?.label}
+                  {job.readyAt != null ? ` · ready ${formatTime(job.readyAt)}` : ''}
+                  {job.dueBy != null ? ` · due ${formatTime(job.dueBy)}` : ''}
                 </span>
               </span>
               <button

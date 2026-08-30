@@ -19,7 +19,7 @@ const POWER_LABEL: Record<string, string> = {
  * directly beneath so the two line up minute for minute (R1 and R3).
  */
 export function Timeline({ plan }: { plan: Plan }) {
-  const { window, enteredCuts, placements } = plan;
+  const { window, enteredCuts, placements, machines } = plan;
 
   return (
     <section className="lift rounded-3xl bg-shell p-5 sm:p-7">
@@ -70,9 +70,18 @@ export function Timeline({ plan }: { plan: Plan }) {
             ))}
           </Row>
 
-          <Row label="Planned jobs" window={window}>
-            {placements.length === 0 && <Empty>Add jobs to build a plan</Empty>}
-            {placements.map((placement) =>
+          {Array.from({ length: machines }, (_, machine) => (
+          <Row
+            key={machine}
+            label={machines === 1 ? 'Planned jobs' : `Machine ${machine + 1}`}
+            window={window}
+          >
+            {placements.filter((p) => p.machine === machine).length === 0 && (
+              <Empty>{machines === 1 ? 'Add jobs to build a plan' : 'Nothing on this machine'}</Empty>
+            )}
+            {placements
+              .filter((placement) => placement.machine === machine)
+              .map((placement) =>
               placement.segments.map((segment, index) => (
                 <div
                   key={`${placement.job.id}-${index}`}
@@ -101,6 +110,7 @@ export function Timeline({ plan }: { plan: Plan }) {
               )),
             )}
           </Row>
+          ))}
 
           <Legend />
         </div>
@@ -200,6 +210,31 @@ export function GeneratorSummary({ plan }: { plan: Plan }) {
               onGenerator.length === 1 ? '' : 's'
             }.`}
       </p>
+      {plan.generatorBudgetMinutes !== null && (
+        <div className="mt-4 rounded-2xl bg-shell/70 p-3">
+          <div className="flex items-baseline justify-between gap-3 text-xs font-bold text-accent-deep">
+            <span>Fuel budget</span>
+            <span className="tabular-nums">
+              {plan.generatorBudgetMinutes - (plan.generatorBudgetRemaining ?? 0)} of{' '}
+              {plan.generatorBudgetMinutes} min used
+            </span>
+          </div>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-accent/30">
+            <div
+              className="h-full rounded-full bg-accent-deep/80"
+              style={{
+                width: `${Math.min(
+                  100,
+                  plan.generatorBudgetMinutes === 0
+                    ? 100
+                    : (plan.totalGeneratorMinutes / plan.generatorBudgetMinutes) * 100,
+                )}%`,
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       {onGenerator.length > 0 && (
         <ul className="mt-4 space-y-1.5 border-t border-accent/40 pt-4">
           {onGenerator.map((placement) => (

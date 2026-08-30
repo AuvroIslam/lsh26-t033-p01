@@ -14,6 +14,13 @@ export interface ScheduleInput {
   window: Interval;
   cuts: readonly Interval[];
   jobs: readonly Job[];
+  /** How many jobs the shop can run at once. One machine by default. */
+  machines?: number;
+  /**
+   * Fuel ceiling, in generator minutes. The plan will not exceed it: a job that
+   * would is left unplaced with that reason. `null` means unlimited.
+   */
+  generatorBudgetMinutes?: number | null;
 }
 
 /**
@@ -24,8 +31,11 @@ type Preference = 'cut-free' | 'inside-cut' | 'anywhere' | 'cheapest';
 
 interface Candidate {
   start: number;
-  /** Index into the free list, so the chosen span can be removed cheaply. */
+  machine: number;
+  /** Index into that machine's free list, so the span can be removed cheaply. */
   freeIndex: number;
+  /** Generator minutes this slot would cost. */
+  cost: number;
 }
 
 interface Group {
@@ -34,24 +44,31 @@ interface Group {
   allowFallback: boolean;
 }
 
+const MAX_MACHINES = 8;
+
 /**
  * Builds a plan.
  *
- * The shop is treated as one worktop: jobs run one at a time and never overlap
- * each other. A job is not split across a break either, so a 90 minute job
- * needs 90 uninterrupted minutes.
+ * Each machine runs one job at a time, and a job is never split across a break,
+ * so a 90 minute job needs 90 uninterrupted minutes on one machine.
  *
- * Jobs are placed most-constrained first, and within each group longest first,
- * because a long job has the fewest gaps it can fit into:
+ * Jobs are placed most-constrained first — `grid`, then `generator`, then
+ * `none` — and within each group urgent work first, then earliest promised
+ * time, then longest:
  *
- * 1. `grid` jobs, which may only use cut-free space. This is a hard rule: if no
+ * 1. `grid` jobs may only use cut-free space. This is a hard rule: if no
  *    cut-free gap is long enough, the job is reported as unplaced rather than
  *    placed somewhere invalid.
- * 2. `generator` jobs, which take the slot costing the fewest generator
- *    minutes. That is cut-free space wherever it exists, since it costs
- *    nothing; otherwise the slot overlapping the cuts by the least.
- * 3. `none` jobs, which prefer to sit inside cuts. They need no power, so
- *    parking them in a cut keeps scarce cut-free space available for the rest.
+ * 2. `generator` jobs take the slot costing the fewest generator minutes — that
+ *    is cut-free space wherever it exists, since it costs nothing, otherwise
+ *    the slot overlapping the cuts by the least. A slot that would break the
+ *    fuel budget is never taken.
+ * 3. `none` jobs prefer to sit inside cuts. They need no power, so parking them
+ *    in a cut keeps scarce cut-free space available for the rest.
+ *
+ * A job may also carry a ready time, a promised finish time, or both. Those are
+ * hard constraints too: a job that cannot be finished by the time it was
+ * promised is reported, never quietly placed late.
  *
  * The result is deterministic: the same input always produces the same plan.
  */
@@ -61,15 +78,21 @@ export function buildPlan(input: ScheduleInput): Plan {
     end: Math.max(input.window.start, input.window.end),
   };
 
+  const machines = clampMachines(input.machines);
+  const budget = normalizeBudget(input.generatorBudgetMinutes);
+
   // Shown in full on the timeline, because a cut is real even when the shop is
   // shut. Only the part inside opening hours can affect the plan, so the
   // scheduler works from the clamped set.
   const enteredCuts = normalize(input.cuts);
   const cuts = normalize(enteredCuts.flatMap((cut) => intersect(cut, [window])));
 
-  let free: Interval[] = length(window) > 0 ? [{ ...window }] : [];
+  const free: Interval[][] = Array.from({ length: machines }, () =>
+    length(window) > 0 ? [{ ...window }] : [],
+  );
   const placements: Placement[] = [];
   const unplaced: UnplacedJob[] = [];
+  let generatorUsed = 0;
 
   const order: readonly Group[] = [
     { power: 'grid', preference: 'cut-free', allowFallback: false },
@@ -78,89 +101,165 @@ export function buildPlan(input: ScheduleInput): Plan {
   ];
 
   for (const group of order) {
-    const jobs = input.jobs
-      .map((job, index) => ({ job, index }))
-      .filter((entry) => entry.job.power === group.power)
-      .sort((a, b) => b.job.minutes - a.job.minutes || a.index - b.index);
+    for (const job of sortForPlacement(input.jobs, group.power, window)) {
+      const rejection = rejectOutright(job, window);
+      if (rejection) {
+        unplaced.push({ job, reason: rejection });
+        continue;
+      }
 
-    for (const { job } of jobs) {
-      if (!Number.isFinite(job.minutes) || job.minutes <= 0) {
-        unplaced.push({ job, reason: 'Duration must be at least 1 minute.' });
-        continue;
-      }
-      if (job.minutes > length(window)) {
-        unplaced.push({
-          job,
-          reason: `Longer than the whole working window, which is ${length(window)} minutes.`,
-        });
-        continue;
-      }
+      const reach = reachableWindow(job, window);
+      const budgetFor =
+        job.power === 'generator' && budget !== null ? budget - generatorUsed : null;
 
       let candidate =
         group.preference === 'cheapest'
-          ? findCheapestSlot(free, cuts, job.minutes)
-          : findSlot(free, cuts, job.minutes, group.preference);
+          ? findCheapestSlot(free, cuts, job.minutes, reach, budgetFor)
+          : findSlot(free, cuts, job.minutes, group.preference, reach);
       let usedFallback = false;
       if (!candidate && group.allowFallback) {
-        candidate = findSlot(free, cuts, job.minutes, 'anywhere');
+        candidate = findSlot(free, cuts, job.minutes, 'anywhere', reach);
         usedFallback = candidate !== null;
       }
 
       if (!candidate) {
-        unplaced.push({ job, reason: reasonForFailure(job, free, cuts, group.preference) });
+        unplaced.push({
+          job,
+          reason: reasonForFailure(job, free, cuts, group.preference, reach, budgetFor),
+        });
         continue;
       }
 
       const span: Interval = { start: candidate.start, end: candidate.start + job.minutes };
-      placements.push(buildPlacement(job, span, cuts, group.preference, usedFallback));
-      free = occupy(free, candidate.freeIndex, span);
+      placements.push(
+        buildPlacement(job, span, candidate.machine, cuts, group.preference, usedFallback),
+      );
+      generatorUsed += candidate.cost;
+      free[candidate.machine] = occupy(free[candidate.machine]!, candidate.freeIndex, span);
     }
   }
 
-  placements.sort((a, b) => a.start - b.start || a.job.name.localeCompare(b.job.name));
+  placements.sort(
+    (a, b) => a.start - b.start || a.machine - b.machine || a.job.name.localeCompare(b.job.name),
+  );
 
   const totalGeneratorMinutes = placements.reduce((sum, p) => sum + p.generatorMinutes, 0);
   const scheduledMinutes = placements.reduce((sum, p) => sum + (p.end - p.start), 0);
+  const capacityMinutes = length(window) * machines;
 
   return {
     window,
     enteredCuts,
     cuts,
+    machines,
     placements,
     unplaced,
     totalGeneratorMinutes,
+    generatorBudgetMinutes: budget,
+    generatorBudgetRemaining: budget === null ? null : Math.max(0, budget - totalGeneratorMinutes),
     scheduledMinutes,
-    idleMinutes: Math.max(0, length(window) - scheduledMinutes),
+    capacityMinutes,
+    idleMinutes: Math.max(0, capacityMinutes - scheduledMinutes),
+  };
+}
+
+function clampMachines(machines: number | undefined): number {
+  if (machines === undefined || !Number.isFinite(machines)) return 1;
+  return Math.max(1, Math.min(MAX_MACHINES, Math.round(machines)));
+}
+
+function normalizeBudget(budget: number | null | undefined): number | null {
+  if (budget === null || budget === undefined) return null;
+  if (!Number.isFinite(budget) || budget < 0) return null;
+  return Math.round(budget);
+}
+
+/**
+ * Urgent work first, then earliest promised time, then longest.
+ *
+ * Earliest-deadline-first is the standard ordering for meeting promised times,
+ * and longest-first packs better among jobs with no promise attached, because a
+ * long job has the fewest gaps it can fit into.
+ */
+function sortForPlacement(jobs: readonly Job[], power: Job['power'], window: Interval): Job[] {
+  return jobs
+    .map((job, index) => ({ job, index }))
+    .filter((entry) => entry.job.power === power)
+    .sort((a, b) => {
+      const urgency = Number(b.job.urgent ?? false) - Number(a.job.urgent ?? false);
+      if (urgency !== 0) return urgency;
+      const dueA = a.job.dueBy ?? window.end;
+      const dueB = b.job.dueBy ?? window.end;
+      if (dueA !== dueB) return dueA - dueB;
+      if (a.job.minutes !== b.job.minutes) return b.job.minutes - a.job.minutes;
+      return a.index - b.index;
+    })
+    .map((entry) => entry.job);
+}
+
+/** Problems that need no search to detect, reported in the user's terms. */
+function rejectOutright(job: Job, window: Interval): string | null {
+  if (!Number.isFinite(job.minutes) || job.minutes <= 0) {
+    return 'Duration must be at least 1 minute.';
+  }
+  if (job.minutes > length(window)) {
+    return `Longer than the whole working window, which is ${length(window)} minutes.`;
+  }
+  const reach = reachableWindow(job, window);
+  if (length(reach) <= 0) {
+    return 'Its ready time and promised time leave no usable window today.';
+  }
+  if (job.minutes > length(reach)) {
+    return `Needs ${job.minutes} minutes but only ${length(reach)} fit between ${formatTime(reach.start)} and ${formatTime(reach.end)}.`;
+  }
+  return null;
+}
+
+/** The span a job is allowed to occupy, once its own times are applied. */
+function reachableWindow(job: Job, window: Interval): Interval {
+  return {
+    start: Math.max(window.start, job.readyAt ?? window.start),
+    end: Math.min(window.end, job.dueBy ?? window.end),
   };
 }
 
 /** Earliest start at which `minutes` fit into free space of the wanted kind. */
 function findSlot(
-  free: readonly Interval[],
+  free: readonly Interval[][],
   cuts: readonly Interval[],
   minutes: number,
   preference: Preference,
+  reach: Interval,
 ): Candidate | null {
   let best: Candidate | null = null;
-  free.forEach((gap, freeIndex) => {
-    const slices =
-      preference === 'cut-free'
-        ? subtract(gap, cuts)
-        : preference === 'inside-cut'
-          ? intersect(gap, cuts)
-          : [gap];
-    for (const slice of slices) {
-      if (length(slice) < minutes) continue;
-      if (!best || slice.start < best.start) best = { start: slice.start, freeIndex };
-      break; // Slices are ordered, so the first fit here is this gap's earliest.
-    }
+
+  free.forEach((lane, machine) => {
+    lane.forEach((gap, freeIndex) => {
+      for (const usable of intersect(gap, [reach])) {
+        const slices =
+          preference === 'cut-free'
+            ? subtract(usable, cuts)
+            : preference === 'inside-cut'
+              ? intersect(usable, cuts)
+              : [usable];
+        for (const slice of slices) {
+          if (length(slice) < minutes) continue;
+          const cost = overlapMinutes({ start: slice.start, end: slice.start + minutes }, cuts);
+          if (!best || slice.start < best.start) {
+            best = { start: slice.start, machine, freeIndex, cost };
+          }
+          break; // Slices are ordered, so the first fit here is this gap's earliest.
+        }
+      }
+    });
   });
+
   return best;
 }
 
 /**
  * Slot for a generator job that costs the fewest generator minutes, breaking
- * ties towards the earliest start.
+ * ties towards the earliest start, and never exceeding the fuel left.
  *
  * Overlap with the cuts, seen as a function of the start time, only changes
  * direction where the job's leading or trailing edge crosses a cut boundary.
@@ -169,37 +268,49 @@ function findSlot(
  * When a cut-free slot exists this returns it, because its cost is zero.
  */
 function findCheapestSlot(
-  free: readonly Interval[],
+  free: readonly Interval[][],
   cuts: readonly Interval[],
   minutes: number,
+  reach: Interval,
+  budgetLeft: number | null,
 ): Candidate | null {
-  let best: (Candidate & { cost: number }) | null = null;
+  let best: Candidate | null = null;
 
-  free.forEach((gap, freeIndex) => {
-    if (length(gap) < minutes) return;
+  free.forEach((lane, machine) => {
+    lane.forEach((gap, freeIndex) => {
+      for (const usable of intersect(gap, [reach])) {
+        if (length(usable) < minutes) continue;
 
-    const starts = new Set<number>([gap.start, gap.end - minutes]);
-    for (const cut of cuts) {
-      starts.add(cut.end);
-      starts.add(cut.start - minutes);
-    }
+        const starts = new Set<number>([usable.start, usable.end - minutes]);
+        for (const cut of cuts) {
+          starts.add(cut.end);
+          starts.add(cut.start - minutes);
+        }
 
-    for (const start of starts) {
-      if (start < gap.start || start + minutes > gap.end) continue;
-      const cost = overlapMinutes({ start, end: start + minutes }, cuts);
-      if (!best || cost < best.cost || (cost === best.cost && start < best.start)) {
-        best = { start, freeIndex, cost };
+        for (const start of starts) {
+          if (start < usable.start || start + minutes > usable.end) continue;
+          const cost = overlapMinutes({ start, end: start + minutes }, cuts);
+          if (budgetLeft !== null && cost > budgetLeft) continue;
+          if (
+            !best ||
+            cost < best.cost ||
+            (cost === best.cost && start < best.start) ||
+            (cost === best.cost && start === best.start && machine < best.machine)
+          ) {
+            best = { start, machine, freeIndex, cost };
+          }
+        }
       }
-    }
+    });
   });
 
   return best;
 }
 
-/** Removes an occupied span from the free list, keeping the list sorted. */
-function occupy(free: readonly Interval[], freeIndex: number, span: Interval): Interval[] {
+/** Removes an occupied span from one machine's free list, keeping it sorted. */
+function occupy(lane: readonly Interval[], freeIndex: number, span: Interval): Interval[] {
   const next: Interval[] = [];
-  free.forEach((gap, index) => {
+  lane.forEach((gap, index) => {
     if (index !== freeIndex) {
       next.push(gap);
       return;
@@ -212,6 +323,7 @@ function occupy(free: readonly Interval[], freeIndex: number, span: Interval): I
 function buildPlacement(
   job: Job,
   span: Interval,
+  machine: number,
   cuts: readonly Interval[],
   preference: Preference,
   usedFallback: boolean,
@@ -225,55 +337,75 @@ function buildPlacement(
   ].sort((a, b) => a.start - b.start);
 
   const generatorMinutes = job.power === 'generator' ? overlapMinutes(span, cuts) : 0;
+  const due = job.dueBy ?? null;
 
   return {
     job,
     start: span.start,
     end: span.end,
+    machine,
     generatorMinutes,
     segments,
-    note: describe(job, span, generatorMinutes, preference, usedFallback),
+    note: describe(job, span, machine, generatorMinutes, preference, usedFallback),
+    slackMinutes: due === null ? null : due - span.end,
   };
 }
 
 function describe(
   job: Job,
   span: Interval,
+  machine: number,
   generatorMinutes: number,
   preference: Preference,
   usedFallback: boolean,
 ): string {
-  const slot = `${formatTime(span.start)} to ${formatTime(span.end)}`;
+  const where = `Machine ${machine + 1}, ${formatTime(span.start)} to ${formatTime(span.end)}`;
+
+  let why: string;
   if (job.power === 'grid') {
-    return `Placed at ${slot}, clear of every power cut.`;
+    why = 'clear of every power cut.';
+  } else if (job.power === 'generator') {
+    why =
+      generatorMinutes > 0
+        ? `no cut-free gap was long enough, so ${generatorMinutes} minutes run on the generator.`
+        : 'in cut-free time, so it needs no generator.';
+  } else if (preference === 'inside-cut' && !usedFallback) {
+    why = 'inside a cut on purpose, since it needs no power, which keeps cut-free time for others.';
+  } else {
+    why = 'it needs no power, so a cut does not affect it.';
   }
-  if (job.power === 'generator') {
-    return generatorMinutes > 0
-      ? `Placed at ${slot}. No cut-free gap was long enough, so the cheapest slot was used and ${generatorMinutes} minutes run on the generator.`
-      : `Placed at ${slot} in cut-free time, so it needs no generator.`;
-  }
-  if (preference === 'inside-cut' && !usedFallback) {
-    return `Placed at ${slot}, inside a cut on purpose. It needs no power, which keeps cut-free time free for other jobs.`;
-  }
-  return `Placed at ${slot}. It needs no power, so a cut does not affect it.`;
+
+  const due = job.dueBy ?? null;
+  const promise =
+    due === null ? '' : ` Promised by ${formatTime(due)}, with ${due - span.end} minutes to spare.`;
+
+  return `${where}, ${why}${promise}`;
 }
 
 function reasonForFailure(
   job: Job,
-  free: readonly Interval[],
+  free: readonly Interval[][],
   cuts: readonly Interval[],
   preference: Preference,
+  reach: Interval,
+  budgetLeft: number | null,
 ): string {
+  const gaps = free.flat().flatMap((gap) => intersect(gap, [reach]));
+
   if (preference === 'cut-free') {
-    const longest = free
+    const longest = gaps
       .flatMap((gap) => subtract(gap, cuts))
       .reduce((max, gap) => Math.max(max, length(gap)), 0);
     return longest === 0
-      ? 'No cut-free time is left in the working window.'
+      ? 'No cut-free time is left in the window this job can use.'
       : `Needs ${job.minutes} uninterrupted minutes clear of every cut, but the longest such gap left is ${longest} minutes.`;
   }
-  const longest = free.reduce((max, gap) => Math.max(max, length(gap)), 0);
+
+  const longest = gaps.reduce((max, gap) => Math.max(max, length(gap)), 0);
+  if (longest >= job.minutes && budgetLeft !== null) {
+    return `Every remaining slot would run on the generator for longer than the ${budgetLeft} generator minutes still in budget.`;
+  }
   return longest === 0
-    ? 'The working window is already full.'
+    ? 'No machine has time left in the window this job can use.'
     : `Needs ${job.minutes} uninterrupted minutes, but the longest free gap left is ${longest} minutes.`;
 }

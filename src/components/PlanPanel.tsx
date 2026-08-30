@@ -19,7 +19,7 @@ export function PlanPanel({ plan }: { plan: Plan }) {
       description={
         plan.placements.length === 0
           ? 'Nothing scheduled yet.'
-          : `${plan.placements.length} job${plan.placements.length === 1 ? '' : 's'} scheduled, ${formatDuration(plan.scheduledMinutes)} of work, ${formatDuration(plan.idleMinutes)} idle.`
+          : `${plan.placements.length} job${plan.placements.length === 1 ? '' : 's'} scheduled across ${plan.machines} machine${plan.machines === 1 ? '' : 's'}, ${formatDuration(plan.scheduledMinutes)} of work, ${formatDuration(plan.idleMinutes)} idle.`
       }
     >
       {plan.placements.length === 0 && plan.unplaced.length === 0 && (
@@ -60,6 +60,27 @@ export function PlanPanel({ plan }: { plan: Plan }) {
                   {placement.generatorMinutes > 0 && (
                     <span className="rounded-full bg-accent-soft px-2.5 py-0.5 text-[11px] font-bold text-accent-deep">
                       {placement.generatorMinutes} generator min
+                    </span>
+                  )}
+                  {plan.machines > 1 && (
+                    <span className="rounded-full bg-panel px-2.5 py-0.5 text-[11px] font-bold text-ink-soft">
+                      Machine {placement.machine + 1}
+                    </span>
+                  )}
+                  {placement.job.urgent && (
+                    <span className="rounded-full bg-cut-soft px-2.5 py-0.5 text-[11px] font-bold text-cut-deep">
+                      Rush
+                    </span>
+                  )}
+                  {placement.slackMinutes !== null && (
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+                        placement.slackMinutes < 60
+                          ? 'bg-cut-soft text-cut-deep'
+                          : 'bg-gen-soft text-gen-deep'
+                      }`}
+                    >
+                      {placement.slackMinutes} min before promised
                     </span>
                   )}
                 </div>
