@@ -26,48 +26,53 @@ export default function App() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-baseline justify-between gap-2 px-4 py-4 sm:px-6">
-          <div>
-            <h1 className="text-lg font-semibold">Load-Shedding Window Planner</h1>
-            <p className="text-xs text-slate-500">
-              Plan a day's jobs around today's power cuts
-            </p>
+    <div className="min-h-screen bg-ground px-3 py-4 sm:px-6 sm:py-8">
+      <div className="lift-shell mx-auto max-w-6xl rounded-[2rem] bg-shell p-4 sm:p-8">
+        <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="h-9 w-9 rounded-xl bg-accent" aria-hidden="true" />
+            <div>
+              <h1 className="text-2xl font-extrabold tracking-tight text-ink">
+                Load-Shedding Window Planner
+              </h1>
+              <p className="text-sm text-ink-faint">
+                Plan a day's jobs around today's power cuts
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-slate-400">
+          <p className="flex items-center gap-2 text-xs font-bold text-ink-faint">
             LSH26-T033 · P01
             {state.loadedCaseId && (
-              <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 font-medium text-slate-600">
+              <span className="rounded-full bg-panel px-2.5 py-1 text-ink-soft">
                 {state.loadedCaseId}
               </span>
             )}
           </p>
-        </div>
-      </header>
+        </header>
 
-      <main className="mx-auto max-w-6xl space-y-4 px-4 py-5 sm:px-6">
+        <main className="space-y-5">
         <Timeline plan={plan} />
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <div className="space-y-4">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="space-y-5">
             <WindowPanel state={state} dispatch={dispatch} />
             <CutsPanel cuts={state.cuts} dispatch={dispatch} />
             <JobsPanel jobs={state.jobs} dispatch={dispatch} />
             <DataPanel state={state} dispatch={dispatch} />
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-5">
             <GeneratorSummary plan={plan} />
             <PlanPanel plan={plan} />
           </div>
         </div>
-      </main>
+        </main>
 
-      <footer className="mx-auto max-w-6xl px-4 pb-8 text-xs text-slate-400 sm:px-6">
-        Grid jobs are never scheduled inside a power cut. Generator minutes count only the time a
-        generator-capable job spends inside a cut.
-      </footer>
+        <footer className="mt-7 border-t border-hairline pt-5 text-xs text-ink-faint">
+          Grid jobs are never scheduled inside a power cut. Generator minutes count only the time a
+          generator-capable job spends inside a cut.
+        </footer>
+      </div>
     </div>
   );
 }

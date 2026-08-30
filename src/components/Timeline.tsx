@@ -1,7 +1,7 @@
 import { DAY_MINUTES, formatDuration, formatTime } from '../domain/time';
 import type { Plan } from '../domain/types';
 
-const HOUR_TICKS = Array.from({ length: 25 }, (_, hour) => hour);
+const HOURS = Array.from({ length: 25 }, (_, hour) => hour);
 
 const percent = (minutes: number): string => `${(minutes / DAY_MINUTES) * 100}%`;
 
@@ -19,70 +19,68 @@ export function Timeline({ plan }: { plan: Plan }) {
   const { window, cuts, placements } = plan;
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-      <header className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-base font-semibold text-slate-900">24-hour timeline</h2>
-        <p className="text-xs text-slate-500">
-          Working window {formatTime(window.start)} to {formatTime(window.end)}
+    <section className="lift rounded-3xl bg-shell p-5 sm:p-7">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-extrabold tracking-tight text-ink">24-hour timeline</h2>
+          <p className="mt-0.5 text-sm text-ink-faint">
+            Every job placed around today's cuts, on one scale
+          </p>
+        </div>
+        <p className="rounded-full bg-panel px-3 py-1.5 text-xs font-semibold tabular-nums text-ink-soft">
+          Open {formatTime(window.start)} – {formatTime(window.end)}
         </p>
       </header>
 
-      <div className="overflow-x-auto">
-        <div className="min-w-[720px]">
-          {/* Hour scale */}
-          <div className="relative h-5">
-            {HOUR_TICKS.map((hour) => (
-              <span
-                key={hour}
-                className="absolute -translate-x-1/2 text-[10px] tabular-nums text-slate-400"
-                style={{ left: percent(hour * 60) }}
-              >
-                {hour % 3 === 0 ? String(hour).padStart(2, '0') : ''}
-              </span>
-            ))}
+      <div className="overflow-x-auto pb-1">
+        <div className="min-w-[780px]">
+          <div className="relative h-4 pl-28">
+            <div className="relative h-full">
+              {HOURS.map((hour) => (
+                <span
+                  key={hour}
+                  className="absolute -translate-x-1/2 text-[10px] font-semibold tabular-nums text-ink-faint"
+                  style={{ left: percent(hour * 60) }}
+                >
+                  {String(hour).padStart(2, '0')}
+                </span>
+              ))}
+            </div>
           </div>
 
-          <Row label="Power cuts">
-            {cuts.length === 0 && (
-              <span className="absolute inset-0 flex items-center justify-center text-xs text-slate-400">
-                No power cuts entered
-              </span>
-            )}
+          <Row label="Power cuts" window={window}>
+            {cuts.length === 0 && <Empty>No power cuts entered</Empty>}
             {cuts.map((cut) => (
               <div
                 key={`${cut.start}-${cut.end}`}
-                className="absolute inset-y-0 flex items-center justify-center overflow-hidden rounded-md bg-rose-500/85 text-[10px] font-medium text-white"
+                className="absolute inset-y-1 flex items-center justify-center overflow-hidden rounded-lg bg-cut text-[11px] font-bold text-white"
                 style={{ left: percent(cut.start), width: percent(cut.end - cut.start) }}
                 title={`Power cut ${formatTime(cut.start)} to ${formatTime(cut.end)}`}
               >
-                <span className="truncate px-1">
+                <span className="truncate px-1.5 tabular-nums">
                   {formatTime(cut.start)}–{formatTime(cut.end)}
                 </span>
               </div>
             ))}
           </Row>
 
-          <Row label="Planned jobs">
-            {placements.length === 0 && (
-              <span className="absolute inset-0 flex items-center justify-center text-xs text-slate-400">
-                Add jobs to build a plan
-              </span>
-            )}
+          <Row label="Planned jobs" window={window}>
+            {placements.length === 0 && <Empty>Add jobs to build a plan</Empty>}
             {placements.map((placement) =>
               placement.segments.map((segment, index) => (
                 <div
                   key={`${placement.job.id}-${index}`}
                   className={[
-                    'absolute inset-y-0 flex items-center overflow-hidden border-y text-[10px] font-medium',
-                    index === 0 ? 'rounded-l-md border-l' : '',
-                    index === placement.segments.length - 1 ? 'rounded-r-md border-r' : '',
+                    'absolute inset-y-1 flex items-center overflow-hidden text-[11px] font-bold',
+                    index === 0 ? 'rounded-l-lg' : '',
+                    index === placement.segments.length - 1 ? 'rounded-r-lg' : '',
                     segment.onGenerator
-                      ? 'border-amber-600 bg-amber-400 text-amber-950'
+                      ? 'bg-accent text-accent-deep'
                       : placement.job.power === 'grid'
-                        ? 'border-sky-700 bg-sky-500 text-white'
+                        ? 'bg-grid text-white'
                         : placement.job.power === 'generator'
-                          ? 'border-emerald-700 bg-emerald-500 text-white'
-                          : 'border-slate-500 bg-slate-400 text-white',
+                          ? 'bg-gen text-white'
+                          : 'bg-idle text-white',
                   ].join(' ')}
                   style={{
                     left: percent(segment.start),
@@ -92,38 +90,61 @@ export function Timeline({ plan }: { plan: Plan }) {
                     segment.onGenerator ? ' (on generator)' : ''
                   }`}
                 >
-                  {index === 0 && (
-                    <span className="truncate px-1.5">{placement.job.name}</span>
-                  )}
+                  {index === 0 && <span className="truncate px-2">{placement.job.name}</span>}
                 </div>
               )),
             )}
           </Row>
 
-          {/* Shading for the hours the shop is shut */}
-          <div className="relative mt-1 h-1">
-            <div
-              className="absolute inset-y-0 rounded-full bg-slate-900/70"
-              style={{
-                left: percent(window.start),
-                width: percent(Math.max(0, window.end - window.start)),
-              }}
-              title="Working window"
-            />
-          </div>
+          <Legend />
         </div>
       </div>
-
-      <Legend />
     </section>
   );
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Empty({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-2 flex items-center gap-3">
-      <span className="w-24 shrink-0 text-right text-xs font-medium text-slate-600">{label}</span>
-      <div className="relative h-8 flex-1 rounded-md bg-slate-100 ring-1 ring-inset ring-slate-200">
+    <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-ink-faint">
+      {children}
+    </span>
+  );
+}
+
+/**
+ * One labelled track. Hour gridlines sit behind the bars so a bar's position
+ * can be read off the scale, and the hours the shop is shut are dimmed.
+ */
+function Row({
+  label,
+  window,
+  children,
+}: {
+  label: string;
+  window: { start: number; end: number };
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mb-2 flex items-center gap-4">
+      <span className="w-24 shrink-0 text-right text-xs font-bold tracking-wide text-ink-soft uppercase">
+        {label}
+      </span>
+      <div className="relative h-12 flex-1 overflow-hidden rounded-xl bg-panel ring-1 ring-hairline ring-inset">
+        {HOURS.slice(1, 24).map((hour) => (
+          <span
+            key={hour}
+            className="absolute inset-y-0 w-px bg-hairline"
+            style={{ left: percent(hour * 60) }}
+          />
+        ))}
+        <span
+          className="absolute inset-y-0 left-0 bg-ground/70"
+          style={{ width: percent(window.start) }}
+        />
+        <span
+          className="absolute inset-y-0 right-0 bg-ground/70"
+          style={{ width: percent(DAY_MINUTES - window.end) }}
+        />
         {children}
       </div>
     </div>
@@ -132,17 +153,17 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 
 function Legend() {
   const items: Array<[string, string]> = [
-    ['bg-rose-500/85', 'Power cut'],
-    ['bg-sky-500', 'Grid job'],
-    ['bg-emerald-500', 'Generator-capable job'],
-    ['bg-amber-400', 'Running on the generator'],
-    ['bg-slate-400', 'Needs no power'],
+    ['bg-cut', 'Power cut'],
+    ['bg-grid', 'Grid job'],
+    ['bg-gen', 'Generator-capable job'],
+    ['bg-accent', 'Running on the generator'],
+    ['bg-idle', 'Needs no power'],
   ];
   return (
-    <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 pl-0 sm:pl-27">
+    <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 pl-28">
       {items.map(([color, label]) => (
-        <li key={label} className="flex items-center gap-1.5 text-xs text-slate-600">
-          <span className={`inline-block h-2.5 w-4 rounded-sm ${color}`} />
+        <li key={label} className="flex items-center gap-2 text-xs font-medium text-ink-soft">
+          <span className={`inline-block h-2.5 w-5 rounded-full ${color}`} />
           {label}
         </li>
       ))}
@@ -150,17 +171,18 @@ function Legend() {
   );
 }
 
+/** R4: the headline number, recomputed from state on every change. */
 export function GeneratorSummary({ plan }: { plan: Plan }) {
   const onGenerator = plan.placements.filter((placement) => placement.generatorMinutes > 0);
   return (
-    <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 shadow-sm sm:p-5">
-      <p className="text-xs font-medium tracking-wide text-amber-800 uppercase">
+    <div className="lift rounded-3xl bg-accent-soft p-6">
+      <p className="text-xs font-bold tracking-widest text-accent-deep uppercase">
         Total generator minutes
       </p>
-      <p className="mt-1 text-4xl font-semibold tabular-nums text-amber-950">
+      <p className="mt-2 text-6xl font-extrabold tracking-tight tabular-nums text-ink">
         {plan.totalGeneratorMinutes}
       </p>
-      <p className="mt-1 text-sm text-amber-900">
+      <p className="mt-2 text-sm font-medium text-accent-deep">
         {plan.totalGeneratorMinutes === 0
           ? 'No job needs the generator in this plan.'
           : `${formatDuration(plan.totalGeneratorMinutes)} across ${onGenerator.length} job${
@@ -168,11 +190,11 @@ export function GeneratorSummary({ plan }: { plan: Plan }) {
             }.`}
       </p>
       {onGenerator.length > 0 && (
-        <ul className="mt-3 space-y-1 border-t border-amber-200 pt-3">
+        <ul className="mt-4 space-y-1.5 border-t border-accent/40 pt-4">
           {onGenerator.map((placement) => (
             <li
               key={placement.job.id}
-              className="flex items-baseline justify-between gap-3 text-sm text-amber-900"
+              className="flex items-baseline justify-between gap-3 text-sm font-medium text-accent-deep"
             >
               <span className="truncate">{placement.job.name}</span>
               <span className="shrink-0 tabular-nums">{placement.generatorMinutes} min</span>

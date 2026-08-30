@@ -15,10 +15,13 @@ List material frameworks, libraries, starters, templates, UI kits, fonts, icons 
 | Testing Library (React, DOM) | https://testing-library.com | MIT | Interface tests |
 | jsdom | https://github.com/jsdom/jsdom | MIT | Browser environment for tests |
 | @types/node, @types/react, @types/react-dom | DefinitelyTyped | MIT | Type definitions |
+| Plus Jakarta Sans | https://fonts.google.com/specimen/Plus+Jakarta+Sans | SIL Open Font License 1.1 | Typeface, loaded from Google Fonts |
 
 No starter, template or UI kit was used. The layout, the timeline and the scheduling engine were
-written by the team during the event. No third-party fonts, icons or image assets are used; the
-interface uses the system font stack and CSS shapes only.
+written by the team during the event. No icon set or image asset is used; every mark on screen is a
+CSS shape. The visual direction — a single floating card on a tinted ground, one amber accent
+against near-navy text, and wide soft shadows — was taken as inspiration from a publicly published
+dashboard concept shot; no code, asset or component from it was copied.
 
 The published sample data in `sample-data/` and `public/` was supplied by the organisers as part of
 the LofiStack Hackathon 2026 problem set.

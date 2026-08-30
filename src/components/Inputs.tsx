@@ -12,10 +12,15 @@ const POWER_OPTIONS: Array<{ value: PowerNeed; label: string; hint: string }> = 
 ];
 
 const fieldClass =
-  'w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 shadow-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200';
+  'w-full rounded-xl border-0 bg-panel px-3.5 py-2.5 text-sm font-medium text-ink ring-1 ring-hairline outline-none transition ring-inset focus:bg-shell focus:ring-2 focus:ring-accent';
 
 const buttonClass =
-  'rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 disabled:opacity-50';
+  'rounded-xl bg-accent px-4 py-2.5 text-sm font-bold text-accent-deep transition hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:opacity-50';
+
+const quietButtonClass =
+  'rounded-xl bg-panel px-4 py-2.5 text-sm font-bold text-ink-soft ring-1 ring-hairline transition ring-inset hover:text-ink';
+
+const labelClass = 'block text-[11px] font-bold tracking-wide text-ink-soft uppercase';
 
 export function Panel({
   title,
@@ -27,9 +32,9 @@ export function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-      <h2 className="text-base font-semibold text-slate-900">{title}</h2>
-      {description && <p className="mt-0.5 mb-3 text-xs text-slate-500">{description}</p>}
+    <section className="lift rounded-3xl bg-shell p-5 sm:p-6">
+      <h2 className="text-lg font-extrabold tracking-tight text-ink">{title}</h2>
+      {description && <p className="mt-1 mb-4 text-sm text-ink-faint">{description}</p>}
       {children}
     </section>
   );
@@ -38,7 +43,7 @@ export function Panel({
 function FieldError({ message }: { message: string | null }) {
   if (!message) return null;
   return (
-    <p role="alert" className="mt-2 text-xs font-medium text-rose-600">
+    <p role="alert" className="mt-2 text-xs font-bold text-cut-deep">
       {message}
     </p>
   );
@@ -67,7 +72,7 @@ export function WindowPanel({ state, dispatch }: { state: AppState; dispatch: (a
   return (
     <Panel title="Working hours" description="Jobs are only scheduled inside this window.">
       <div className="grid grid-cols-2 gap-3">
-        <label className="text-xs font-medium text-slate-600">
+        <label className={labelClass}>
           Opens
           <input
             type="time"
@@ -77,7 +82,7 @@ export function WindowPanel({ state, dispatch }: { state: AppState; dispatch: (a
             onChange={(event) => update('start', event.target.value)}
           />
         </label>
-        <label className="text-xs font-medium text-slate-600">
+        <label className={labelClass}>
           Closes
           <input
             type="time"
@@ -125,8 +130,8 @@ export function CutsPanel({
 
   return (
     <Panel title="Today's power cuts" description="Add each announced cut as a start and end time.">
-      <form onSubmit={submit} className="flex flex-wrap items-end gap-2">
-        <label className="min-w-24 flex-1 text-xs font-medium text-slate-600">
+      <form onSubmit={submit} className="flex flex-wrap items-end gap-2.5">
+        <label className={`min-w-24 flex-1 ${labelClass}`}>
           Cut starts
           <input
             type="time"
@@ -136,7 +141,7 @@ export function CutsPanel({
             onChange={(event) => setStart(event.target.value)}
           />
         </label>
-        <label className="min-w-24 flex-1 text-xs font-medium text-slate-600">
+        <label className={`min-w-24 flex-1 ${labelClass}`}>
           Cut ends
           <input
             type="time"
@@ -153,22 +158,22 @@ export function CutsPanel({
       <FieldError message={error} />
 
       {cuts.length > 0 && (
-        <ul className="mt-3 divide-y divide-slate-100 border-t border-slate-100">
+        <ul className="mt-4 divide-y divide-hairline border-t border-hairline">
           {cuts.map((cut) => (
-            <li key={cut.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+            <li key={cut.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
               <span className="flex items-center gap-2">
-                <span className="inline-block h-2.5 w-4 rounded-sm bg-rose-500/85" />
-                <span className="tabular-nums text-slate-800">
+                <span className="inline-block h-2.5 w-5 rounded-full bg-cut" />
+                <span className="font-semibold tabular-nums text-ink">
                   {formatTime(cut.start)} – {formatTime(cut.end)}
                 </span>
-                <span className="text-xs text-slate-500">
+                <span className="text-xs font-medium text-ink-faint">
                   {formatDuration(Math.max(0, cut.end - cut.start))}
                 </span>
               </span>
               <button
                 type="button"
                 onClick={() => dispatch({ type: 'removeCut', id: cut.id })}
-                className="text-xs font-medium text-slate-500 hover:text-rose-600"
+                className="text-xs font-bold text-ink-faint transition hover:text-cut"
               >
                 Remove
               </button>
@@ -206,9 +211,9 @@ export function JobsPanel({ jobs, dispatch }: { jobs: Job[]; dispatch: (a: Actio
 
   return (
     <Panel title="Jobs" description="Each job has a name, a duration and what power it needs.">
-      <form onSubmit={submit} className="space-y-2">
-        <div className="flex flex-wrap gap-2">
-          <label className="min-w-40 flex-[2] text-xs font-medium text-slate-600">
+      <form onSubmit={submit} className="space-y-3">
+        <div className="flex flex-wrap gap-2.5">
+          <label className={`min-w-40 flex-[2] ${labelClass}`}>
             Job name
             <input
               className={`mt-1 ${fieldClass}`}
@@ -217,7 +222,7 @@ export function JobsPanel({ jobs, dispatch }: { jobs: Job[]; dispatch: (a: Actio
               onChange={(event) => setName(event.target.value)}
             />
           </label>
-          <label className="min-w-24 flex-1 text-xs font-medium text-slate-600">
+          <label className={`min-w-24 flex-1 ${labelClass}`}>
             Minutes
             <input
               type="number"
@@ -229,7 +234,7 @@ export function JobsPanel({ jobs, dispatch }: { jobs: Job[]; dispatch: (a: Actio
             />
           </label>
         </div>
-        <label className="block text-xs font-medium text-slate-600">
+        <label className={labelClass}>
           Power need
           <select
             className={`mt-1 ${fieldClass}`}
@@ -250,19 +255,19 @@ export function JobsPanel({ jobs, dispatch }: { jobs: Job[]; dispatch: (a: Actio
       <FieldError message={error} />
 
       {jobs.length > 0 && (
-        <ul className="mt-3 divide-y divide-slate-100 border-t border-slate-100">
+        <ul className="mt-4 divide-y divide-hairline border-t border-hairline">
           {jobs.map((job) => (
-            <li key={job.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+            <li key={job.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
               <span className="min-w-0">
-                <span className="block truncate text-slate-800">{job.name}</span>
-                <span className="text-xs text-slate-500">
+                <span className="block truncate font-semibold text-ink">{job.name}</span>
+                <span className="text-xs font-medium text-ink-faint">
                   {formatDuration(job.minutes)} · {POWER_OPTIONS.find((o) => o.value === job.power)?.label}
                 </span>
               </span>
               <button
                 type="button"
                 onClick={() => dispatch({ type: 'removeJob', id: job.id })}
-                className="shrink-0 text-xs font-medium text-slate-500 hover:text-rose-600"
+                className="shrink-0 text-xs font-bold text-ink-faint transition hover:text-cut"
               >
                 Remove
               </button>
@@ -336,14 +341,14 @@ export function DataPanel({
       title="Sample data"
       description="Load the published cases, or upload any file in the same shape."
     >
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2.5">
         <button type="button" onClick={loadBundled} className={buttonClass}>
           Load published sample data
         </button>
         <button
           type="button"
           onClick={() => fileInput.current?.click()}
-          className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
+          className={quietButtonClass}
         >
           Upload JSON
         </button>
@@ -355,7 +360,7 @@ export function DataPanel({
             setNotice(null);
             setError(null);
           }}
-          className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
+          className={quietButtonClass}
         >
           Reset
         </button>
@@ -368,11 +373,11 @@ export function DataPanel({
         />
       </div>
 
-      {notice && <p className="mt-2 text-xs text-emerald-700">{notice}</p>}
+      {notice && <p className="mt-3 text-xs font-bold text-gen-deep">{notice}</p>}
       <FieldError message={error} />
 
       {cases && cases.length > 1 && (
-        <label className="mt-3 block text-xs font-medium text-slate-600">
+        <label className={`mt-4 block ${labelClass}`}>
           Case
           <select
             className={`mt-1 ${fieldClass}`}
