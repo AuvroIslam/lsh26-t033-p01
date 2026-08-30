@@ -17,3 +17,7 @@ npm-debug.log*
 .idea/
 
 .vercel
+
+# Presentation working files
+Slide/ReferenceSlide.pptx
+Slide/assets/shot-*.png

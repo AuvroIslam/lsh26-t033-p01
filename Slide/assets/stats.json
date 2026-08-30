@@ -1,0 +1,235 @@
+{
+  "rows": [
+    {
+      "caseId": "PUB-01",
+      "jobs": 11,
+      "placed": 10,
+      "unplaced": 1,
+      "generator": 180,
+      "cuts": 2,
+      "cutMinutes": 240
+    },
+    {
+      "caseId": "PUB-02",
+      "jobs": 10,
+      "placed": 9,
+      "unplaced": 1,
+      "generator": 0,
+      "cuts": 4,
+      "cutMinutes": 285
+    },
+    {
+      "caseId": "PUB-03",
+      "jobs": 12,
+      "placed": 10,
+      "unplaced": 2,
+      "generator": 0,
+      "cuts": 2,
+      "cutMinutes": 150
+    },
+    {
+      "caseId": "PUB-04",
+      "jobs": 10,
+      "placed": 10,
+      "unplaced": 0,
+      "generator": 150,
+      "cuts": 3,
+      "cutMinutes": 315
+    },
+    {
+      "caseId": "PUB-05",
+      "jobs": 8,
+      "placed": 7,
+      "unplaced": 1,
+      "generator": 165,
+      "cuts": 4,
+      "cutMinutes": 300
+    },
+    {
+      "caseId": "PUB-06",
+      "jobs": 11,
+      "placed": 11,
+      "unplaced": 0,
+      "generator": 60,
+      "cuts": 4,
+      "cutMinutes": 330
+    },
+    {
+      "caseId": "PUB-07",
+      "jobs": 12,
+      "placed": 9,
+      "unplaced": 3,
+      "generator": 30,
+      "cuts": 3,
+      "cutMinutes": 270
+    },
+    {
+      "caseId": "PUB-08",
+      "jobs": 10,
+      "placed": 8,
+      "unplaced": 2,
+      "generator": 195,
+      "cuts": 4,
+      "cutMinutes": 285
+    },
+    {
+      "caseId": "PUB-09",
+      "jobs": 10,
+      "placed": 9,
+      "unplaced": 1,
+      "generator": 120,
+      "cuts": 3,
+      "cutMinutes": 240
+    },
+    {
+      "caseId": "PUB-10",
+      "jobs": 11,
+      "placed": 9,
+      "unplaced": 2,
+      "generator": 75,
+      "cuts": 4,
+      "cutMinutes": 255
+    },
+    {
+      "caseId": "PUB-11",
+      "jobs": 11,
+      "placed": 10,
+      "unplaced": 1,
+      "generator": 105,
+      "cuts": 4,
+      "cutMinutes": 315
+    },
+    {
+      "caseId": "PUB-12",
+      "jobs": 11,
+      "placed": 8,
+      "unplaced": 3,
+      "generator": 0,
+      "cuts": 3,
+      "cutMinutes": 225
+    },
+    {
+      "caseId": "PUB-13",
+      "jobs": 9,
+      "placed": 8,
+      "unplaced": 1,
+      "generator": 75,
+      "cuts": 4,
+      "cutMinutes": 225
+    },
+    {
+      "caseId": "PUB-14",
+      "jobs": 10,
+      "placed": 7,
+      "unplaced": 3,
+      "generator": 180,
+      "cuts": 3,
+      "cutMinutes": 300
+    },
+    {
+      "caseId": "PUB-15",
+      "jobs": 12,
+      "placed": 11,
+      "unplaced": 1,
+      "generator": 15,
+      "cuts": 2,
+      "cutMinutes": 150
+    },
+    {
+      "caseId": "PUB-16",
+      "jobs": 10,
+      "placed": 9,
+      "unplaced": 1,
+      "generator": 15,
+      "cuts": 3,
+      "cutMinutes": 225
+    },
+    {
+      "caseId": "PUB-17",
+      "jobs": 10,
+      "placed": 9,
+      "unplaced": 1,
+      "generator": 180,
+      "cuts": 4,
+      "cutMinutes": 315
+    },
+    {
+      "caseId": "PUB-18",
+      "jobs": 9,
+      "placed": 8,
+      "unplaced": 1,
+      "generator": 120,
+      "cuts": 4,
+      "cutMinutes": 225
+    },
+    {
+      "caseId": "PUB-19",
+      "jobs": 13,
+      "placed": 11,
+      "unplaced": 2,
+      "generator": 30,
+      "cuts": 4,
+      "cutMinutes": 255
+    },
+    {
+      "caseId": "PUB-20",
+      "jobs": 10,
+      "placed": 8,
+      "unplaced": 2,
+      "generator": 0,
+      "cuts": 4,
+      "cutMinutes": 330
+    },
+    {
+      "caseId": "PUB-21",
+      "jobs": 10,
+      "placed": 10,
+      "unplaced": 0,
+      "generator": 75,
+      "cuts": 2,
+      "cutMinutes": 150
+    },
+    {
+      "caseId": "PUB-22",
+      "jobs": 13,
+      "placed": 11,
+      "unplaced": 2,
+      "generator": 0,
+      "cuts": 2,
+      "cutMinutes": 90
+    },
+    {
+      "caseId": "PUB-23",
+      "jobs": 12,
+      "placed": 11,
+      "unplaced": 1,
+      "generator": 0,
+      "cuts": 2,
+      "cutMinutes": 120
+    },
+    {
+      "caseId": "PUB-24",
+      "jobs": 9,
+      "placed": 7,
+      "unplaced": 2,
+      "generator": 45,
+      "cuts": 2,
+      "cutMinutes": 180
+    },
+    {
+      "caseId": "PUB-25",
+      "jobs": 9,
+      "placed": 7,
+      "unplaced": 2,
+      "generator": 30,
+      "cuts": 4,
+      "cutMinutes": 285
+    }
+  ],
+  "totals": {
+    "jobs": 263,
+    "placed": 227,
+    "unplaced": 36,
+    "generator": 1845
+  }
+}
