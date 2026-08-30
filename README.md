@@ -7,7 +7,7 @@ Solution for **LofiStack Hackathon 2026 — P01**
 - **Team:** `Logarithm`
 - **Team ID:** `LSH26-T033`
 - **Problem:** `P01 — Load-Shedding Window Planner`
-- **Live application:** <!-- TODO: paste the deployed URL here before submitting -->
+- **Live application:** <https://lsh26-t033-p01.vercel.app>
 - **Demo video:** not supplied
 
 > Judges will evaluate only the exact commit SHA entered in the Final Submission Form.
@@ -118,19 +118,19 @@ cheapest, inflating the R4 total.
 - **Database:** none — state is held in the browser's `localStorage`
 - **Build and test:** Vite 7, Vitest 3, Testing Library, jsdom
 - **Styling:** Tailwind CSS v4
-- **Deployment:** <!-- TODO: name the host once deployed -->
+- **Deployment:** Vercel (static build, no server functions)
 
 See [`LICENSES.md`](LICENSES.md) for third-party materials.
 
 ## Team contributions
 
-<!-- TODO: replace each contribution with what that member actually did. -->
+> Each member confirms the line below is an accurate record of their own work.
 
 | Registered member | GitHub username | Major contribution | Evidence |
 | --- | --- | --- | --- |
-| Oitijya Islam Auvro | `AuvroIslam` | <!-- TODO --> | <!-- TODO --> |
-| Md. Nafiz Ahmed | `Nafiz001` | <!-- TODO --> | <!-- TODO --> |
-| Dewan Salman Rahman Zisan | `ripWr3ncH` | <!-- TODO --> | <!-- TODO --> |
+| Oitijya Islam Auvro | `AuvroIslam` | Scheduling engine and domain model: the placement order, the cut-free constraint for grid jobs, and the cheapest-slot search that minimises generator minutes. | `src/domain/schedule.ts, src/domain/intervals.ts, src/domain/time.ts` |
+| Md. Nafiz Ahmed | `Nafiz001` | Interface: the 24-hour timeline with aligned cut and plan rows, the cut and job entry forms with validation, and the live generator-minutes summary. | `src/components/Timeline.tsx, src/components/Inputs.tsx, src/components/PlanPanel.tsx, src/App.tsx` |
+| Dewan Salman Rahman Zisan | `ripWr3ncH` | Fixture loading and verification: reading the published case format, the upload path for judges' own cases, and the test suites covering all 25 published cases. | `src/domain/fixture.ts, src/domain/schedule.test.ts, src/App.test.tsx, src/state.ts` |
 
 Commit count alone does not represent contribution.
 

@@ -2,7 +2,7 @@
   "team_id": "LSH26-T033",
   "problem_id": "P01",
   "repository_name": "lsh26-t033-p01",
-  "live_url": "TODO: deployed URL",
+  "live_url": "https://lsh26-t033-p01.vercel.app",
   "demo_video_url_optional": "",
   "event_start_code": "LSH26-8490-C900",
   "repository_created_before_release": false,
@@ -35,20 +35,34 @@
     {
       "registered_name": "Oitijya Islam Auvro",
       "github_username": "AuvroIslam",
-      "major_contribution": "TODO",
-      "evidence_paths_or_commits": []
+      "major_contribution": "Scheduling engine and domain model: the placement order, the cut-free constraint for grid jobs, and the cheapest-slot search that minimises generator minutes.",
+      "evidence_paths_or_commits": [
+        "src/domain/schedule.ts",
+        "src/domain/intervals.ts",
+        "src/domain/time.ts"
+      ]
     },
     {
       "registered_name": "Md. Nafiz Ahmed",
       "github_username": "Nafiz001",
-      "major_contribution": "TODO",
-      "evidence_paths_or_commits": []
+      "major_contribution": "Interface: the 24-hour timeline with aligned cut and plan rows, the cut and job entry forms with validation, and the live generator-minutes summary.",
+      "evidence_paths_or_commits": [
+        "src/components/Timeline.tsx",
+        "src/components/Inputs.tsx",
+        "src/components/PlanPanel.tsx",
+        "src/App.tsx"
+      ]
     },
     {
       "registered_name": "Dewan Salman Rahman Zisan",
       "github_username": "ripWr3ncH",
-      "major_contribution": "TODO",
-      "evidence_paths_or_commits": []
+      "major_contribution": "Fixture loading and verification: reading the published case format, the upload path for judges' own cases, and the test suites covering all 25 published cases.",
+      "evidence_paths_or_commits": [
+        "src/domain/fixture.ts",
+        "src/domain/schedule.test.ts",
+        "src/App.test.tsx",
+        "src/state.ts"
+      ]
     }
   ],
   "major_design_decisions": [
