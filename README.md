@@ -162,10 +162,20 @@ Commit count alone does not represent contribution.
 
 ## Known limitations
 
-- **The scheduler is greedy, not exhaustive.** It places jobs in a fixed, well-argued order rather
-  than searching every arrangement. On the published cases it places everything that can fit, but on
-  an adversarial input a different order could in principle fit one more job or shave a few
-  generator minutes. An exact search is exponential and was not worth the event time.
+- **The scheduler is greedy, not exhaustive, and it optimises for generator minutes ahead of the
+  number of jobs placed.** Across the 25 published cases it leaves 36 jobs unplaced. Most are
+  genuinely impossible: `PUB-12` asks for 2145 minutes of work in a 720-minute day and includes two
+  jobs longer than the whole window, and `PUB-14`'s unplaced grid jobs need 195 and 180 uninterrupted
+  cut-free minutes when the longest cut-free gap in the day is 150.
+
+  `PUB-25` is the honest exception. It is only 45 minutes over capacity, yet 240 minutes of work is
+  dropped while 195 minutes sit idle in fragments of 60, 90 and 45. One more job would fit if a
+  generator job were pushed into a cut to consolidate those fragments — but that would raise the
+  very number R4 reports. The problem does not say whether placing another job is worth more than
+  fewer generator minutes, so the planner takes the reading it can defend: keep the generator total
+  as low as possible, and report clearly what did not fit. A compaction pass that moves jobs earlier
+  only when it costs no extra generator minutes was written and measured during the event; it
+  changed none of the 25 cases, so it was removed rather than left in as untested complexity.
 - **No drag to reposition.** The plan is computed; a user cannot nudge a job by hand.
 - **One day at a time.** A cut entered as overnight (`22:00`–`02:00`) is split correctly, but the
   planner models a single day and does not carry work into tomorrow.

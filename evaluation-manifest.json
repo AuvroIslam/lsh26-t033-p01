@@ -59,10 +59,11 @@
     "Jobs needing no power are placed inside cuts on purpose, keeping scarce cut-free time for grid jobs.",
     "An unplaceable job is listed with the reason and the largest gap available, never hidden and never placed illegally.",
     "The plan is derived from state on every render and never stored, so the R4 total cannot go stale.",
-    "Overlapping or touching cuts are merged, and parts of a cut outside opening hours are dropped."
+    "Overlapping or touching cuts are merged, and parts of a cut outside opening hours are dropped.",
+    "A compaction pass that pulls jobs earlier only when it costs no extra generator minutes was written and measured during the event. It changed none of the 25 published cases, so it was removed rather than left in as untested complexity."
   ],
   "known_limitations": [
-    "The scheduler is greedy, not exhaustive: it uses a fixed placement order rather than searching every arrangement, so an adversarial input could in principle fit one more job or save a few generator minutes.",
+    "The scheduler is greedy and optimises for generator minutes ahead of the number of jobs placed. Across the 25 published cases 36 jobs go unplaced; most are genuinely impossible (PUB-12 asks for 2145 minutes of work in a 720-minute day; PUB-14's unplaced grid jobs need 195 and 180 uninterrupted cut-free minutes when the longest cut-free gap is 150). PUB-25 is the exception: one further job would fit if a generator job were pushed into a cut, which would raise the number R4 reports. The problem does not rank those two outcomes, so the planner keeps the generator total lowest and reports what did not fit.",
     "Jobs cannot be dragged or repositioned by hand; the plan is computed.",
     "One day is modelled. An overnight cut is split correctly but work is not carried into the next day.",
     "No print or export of the plan.",
