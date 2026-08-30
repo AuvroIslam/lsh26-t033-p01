@@ -1,5 +1,7 @@
 import { formatDuration, formatTime } from '../domain/time';
 import type { Plan } from '../domain/types';
+import { CalendarCheck } from 'lucide-react';
+
 import { Panel } from './Inputs';
 
 const POWER_BADGE: Record<string, { label: string; className: string }> = {
@@ -13,7 +15,7 @@ export function PlanPanel({ plan }: { plan: Plan }) {
   return (
     <Panel
       title="The plan"
-      icon="charge"
+      icon={CalendarCheck}
       description={
         plan.placements.length === 0
           ? 'Nothing scheduled yet.'

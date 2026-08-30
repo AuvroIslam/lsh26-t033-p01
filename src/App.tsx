@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useReducer } from 'react';
+import { Zap } from 'lucide-react';
 
 import { buildPlan } from './domain/schedule';
 import { GeneratorSummary, Timeline } from './components/Timeline';
@@ -30,7 +31,7 @@ export default function App() {
       <div className="lift-shell mx-auto max-w-6xl rounded-[2rem] bg-shell p-4 sm:p-8">
         <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <IconTile name="pylon" size={52} />
+            <IconTile icon={Zap} size={52} tone="accent" />
             <div>
               <h1 className="text-2xl font-extrabold tracking-tight text-ink">
                 Load-Shedding Window Planner

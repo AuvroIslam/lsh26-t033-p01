@@ -1,5 +1,7 @@
 import { DAY_MINUTES, formatDuration, formatTime } from '../domain/time';
 import type { Plan } from '../domain/types';
+import { BatteryCharging, CalendarClock } from 'lucide-react';
+
 import { IconTile } from './Inputs';
 
 const HOURS = Array.from({ length: 25 }, (_, hour) => hour);
@@ -23,7 +25,7 @@ export function Timeline({ plan }: { plan: Plan }) {
     <section className="lift rounded-3xl bg-shell p-5 sm:p-7">
       <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3.5">
-          <IconTile name="calendar" size={48} />
+          <IconTile icon={CalendarClock} size={48} />
           <div>
           <h2 className="text-xl font-extrabold tracking-tight text-ink">24-hour timeline</h2>
           <p className="mt-0.5 text-sm text-ink-faint">
@@ -181,7 +183,7 @@ export function GeneratorSummary({ plan }: { plan: Plan }) {
   return (
     <div className="lift rounded-3xl bg-accent-soft p-6">
       <div className="flex items-start gap-3.5">
-        <IconTile name="battery" size={48} />
+        <IconTile icon={BatteryCharging} size={48} tone="accent" />
         <div className="min-w-0">
           <p className="text-xs font-bold tracking-widest text-accent-deep uppercase">
             Total generator minutes

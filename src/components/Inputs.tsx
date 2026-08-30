@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { AlertTriangle, ClipboardList, Clock, Database, type LucideIcon } from 'lucide-react';
 
 import { formatDuration, formatTime, parseTime } from '../domain/time';
 import { parseFixture, FixtureError, type FixtureCase } from '../domain/fixture';
@@ -22,18 +23,26 @@ const quietButtonClass =
 
 const labelClass = 'block text-[11px] font-bold tracking-wide text-ink-soft uppercase';
 
-/** A decorative tile from the project's own icon set. */
-export function IconTile({ name, size = 44 }: { name: string; size?: number }) {
+/** A glyph on a dark rounded tile, the one decorative motif in the interface. */
+export function IconTile({
+  icon: Icon,
+  size = 44,
+  tone = 'dark',
+}: {
+  icon: LucideIcon;
+  size?: number;
+  tone?: 'dark' | 'accent';
+}) {
   return (
-    <img
-      src={`${import.meta.env.BASE_URL}icons/${name}.png`}
-      alt=""
+    <span
       aria-hidden="true"
-      width={size}
-      height={size}
-      className="shrink-0 rounded-2xl"
+      className={`flex shrink-0 items-center justify-center rounded-2xl ${
+        tone === 'accent' ? 'bg-accent text-ink' : 'bg-ink text-accent'
+      }`}
       style={{ width: size, height: size }}
-    />
+    >
+      <Icon size={Math.round(size * 0.5)} strokeWidth={2.1} absoluteStrokeWidth />
+    </span>
   );
 }
 
@@ -45,13 +54,13 @@ export function Panel({
 }: {
   title: string;
   description?: string;
-  icon?: string;
+  icon?: LucideIcon;
   children: React.ReactNode;
 }) {
   return (
     <section className="lift rounded-3xl bg-shell p-5 sm:p-6">
       <div className="mb-4 flex items-start gap-3.5">
-        {icon && <IconTile name={icon} />}
+        {icon && <IconTile icon={icon} />}
         <div className="min-w-0">
           <h2 className="text-lg font-extrabold tracking-tight text-ink">{title}</h2>
           {description && <p className="mt-0.5 text-sm text-ink-faint">{description}</p>}
@@ -95,7 +104,7 @@ export function WindowPanel({ state, dispatch }: { state: AppState; dispatch: (a
     <Panel
       title="Working hours"
       description="Jobs are only scheduled inside this window."
-      icon="stopwatch"
+      icon={Clock}
     >
       <div className="grid grid-cols-2 gap-3">
         <label className={labelClass}>
@@ -158,7 +167,7 @@ export function CutsPanel({
     <Panel
       title="Today's power cuts"
       description="Add each announced cut as a start and end time."
-      icon="warning"
+      icon={AlertTriangle}
     >
       <form onSubmit={submit} className="flex flex-wrap items-end gap-2.5">
         <label className={`min-w-24 flex-1 ${labelClass}`}>
@@ -243,7 +252,7 @@ export function JobsPanel({ jobs, dispatch }: { jobs: Job[]; dispatch: (a: Actio
     <Panel
       title="Jobs"
       description="Each job has a name, a duration and what power it needs."
-      icon="clipboard"
+      icon={ClipboardList}
     >
       <form onSubmit={submit} className="space-y-3">
         <div className="flex flex-wrap gap-2.5">
@@ -374,7 +383,7 @@ export function DataPanel({
     <Panel
       title="Sample data"
       description="Load the published cases, or upload any file in the same shape."
-      icon="meter"
+      icon={Database}
     >
       <div className="flex flex-wrap gap-2.5">
         <button type="button" onClick={loadBundled} className={buttonClass}>

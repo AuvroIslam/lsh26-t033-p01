@@ -15,15 +15,14 @@ List material frameworks, libraries, starters, templates, UI kits, fonts, icons 
 | Testing Library (React, DOM) | https://testing-library.com | MIT | Interface tests |
 | jsdom | https://github.com/jsdom/jsdom | MIT | Browser environment for tests |
 | @types/node, @types/react, @types/react-dom | DefinitelyTyped | MIT | Type definitions |
+| lucide-react | 1.37.0 — https://lucide.dev | ISC | Interface icons |
 | Plus Jakarta Sans | https://fonts.google.com/specimen/Plus+Jakarta+Sans | SIL Open Font License 1.1 | Typeface, loaded from Google Fonts |
 
 ### Icons and illustration
 
-The twelve icon tiles in `public/icons/` and the mascot in `public/mascot.png` were supplied by the
-team for this project. They were cut from the team's own source artwork during the event: each icon
-was sliced from a single sheet, its background keyed out and composited onto a rounded tile, and the
-mascot's white ground was made transparent. No third-party icon set, icon font or stock illustration
-is used.
+Interface icons are from **Lucide** (ISC licence), used unmodified through `lucide-react`. The mascot
+illustration in `public/mascot.png` was supplied by the team for this project; its white background
+was made transparent during the event. No other third-party illustration or stock asset is used.
 
 No starter, template or UI kit was used. The layout, the timeline and the scheduling engine were
 written by the team during the event. No icon set or image asset is used; every mark on screen is a
