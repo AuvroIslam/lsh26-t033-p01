@@ -79,7 +79,7 @@ def chart_placed_donut(path):
 
 
 def chart_generator_bars(path):
-    fig, ax = plt.subplots(figsize=(13.5, 5.2), dpi=200)
+    fig, ax = plt.subplots(figsize=(15.5, 3.9), dpi=200)
     fig.patch.set_facecolor(CREAM_HEX)
     ax.set_facecolor(CREAM_HEX)
     labels = [r["caseId"].replace("PUB-", "") for r in ROWS]
@@ -151,6 +151,21 @@ def phone_frame(shot_path, out_path, screen_w=760):
     cx = canvas.width // 2
     draw.rounded_rectangle([cx - 78, bezel + 14, cx + 78, bezel + 44], 15, fill=(17, 17, 17, 255))
     canvas.save(out_path)
+
+
+def place_picture(slide, name, x, y, width):
+    """Adds a picture at its true aspect ratio and returns its bottom edge."""
+    path = os.path.join(ASSETS, name)
+    with Image.open(path) as im:
+        aspect = im.height / im.width
+    height = Emu(int(width * aspect))
+    slide.shapes.add_picture(path, x, y, width=width, height=height)
+    return y + height
+
+
+def asset(slide, name, x, y, size):
+    """Drops a square 3D element from the reference set."""
+    slide.shapes.add_picture(os.path.join(ASSETS, name), x, y, width=size, height=size)
 
 
 # --------------------------------------------------------------- pptx tools
@@ -239,22 +254,12 @@ def stat_card(slide, x, y, w, h, value, label, accent=False):
         [[(label, "")]], size=15, color=INK if accent else INK_SOFT, line=1.2)
 
 
-def numbered_card(slide, x, y, w, h, number, title, body_parts):
+def numbered_card(slide, x, y, w, h, badge, title, body_parts):
     rect(slide, x, y, w, h, fill=CARD, line_color=LINE)
-    chip = rect(slide, x + Inches(0.42), y + Inches(0.42), Inches(0.62), Inches(0.62), fill=AMBER)
-    tf = chip.text_frame
-    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-    para = tf.paragraphs[0]
-    para.alignment = PP_ALIGN.CENTER
-    run = para.add_run()
-    run.text = number
-    run.font.size = Pt(18)
-    run.font.bold = True
-    run.font.name = "Poppins"
-    run.font.color.rgb = INK
-    box(slide, x + Inches(1.28), y + Inches(0.46), w - Inches(1.6), Inches(1.1),
+    asset(slide, badge, x + Inches(0.42), y + Inches(0.42), Inches(0.78))
+    box(slide, x + Inches(0.42), y + Inches(1.45), w - Inches(0.84), Inches(1.1),
         [[(title, "b")]], size=20, color=INK, line=1.15)
-    box(slide, x + Inches(0.42), y + Inches(1.85), w - Inches(0.84), h - Inches(2.3),
+    box(slide, x + Inches(0.42), y + Inches(2.5), w - Inches(0.84), h - Inches(2.95),
         body_parts, size=16, color=INK_SOFT, line=1.35)
 
 
@@ -293,10 +298,10 @@ def build():
         size=22, color=INK_SOFT, line=1.45, space_after=18)
 
     x = M + Inches(10.6)
-    stat_card(s, x, Inches(3.4), Inches(3.6), Inches(2.5), f"{AVG_CUTS:.1f}", "power cuts on an average day", accent=True)
-    stat_card(s, x + Inches(3.95), Inches(3.4), Inches(3.6), Inches(2.5),
+    stat_card(s, x, Inches(3.4), Inches(3.6), Inches(3.0), f"{AVG_CUTS:.1f}", "power cuts on an average day", accent=True)
+    stat_card(s, x + Inches(3.95), Inches(3.4), Inches(3.6), Inches(3.0),
               f"{AVG_CUT_MIN / 60:.1f}h", "of the day with no grid power")
-    stat_card(s, x, Inches(6.15), Inches(7.55), Inches(2.2), "263", "jobs across the 25 published cases we tested against")
+    stat_card(s, x, Inches(6.7), Inches(7.55), Inches(2.6), "263", "jobs across the 25 published cases we tested against")
 
     # 3 ------------------------------------------------- the required items
     s = add_slide(prs)
@@ -304,14 +309,14 @@ def build():
     heading(s, "Four required items.")
     rule(s, Inches(2.9))
     items = [
-        ("R1", "Enter the cuts", [[("Start and end time for each announced cut, drawn on a ", ""), ("24-hour timeline", "ab"), (".", "")]]),
-        ("R2", "Add the jobs", [[("Name, duration, and what power it needs: ", ""), ("grid", "ab"), (", ", ""), ("generator", "ab"), (" or ", ""), ("none", "ab"), (".", "")]]),
-        ("R3", "Place them automatically", [[("No job needing grid power may ", ""), ("ever", "b"), (" land inside a cut. Plan shown beside the cut bars.", "")]]),
-        ("R4", "Count generator minutes", [[("The total the plan needs, updating the ", ""), ("moment", "ab"), (" a job is added or removed.", "")]]),
+        ("badge-1.png", "Enter the cuts", [[("Start and end time for each announced cut, drawn on a ", ""), ("24-hour timeline", "ab"), (".", "")]]),
+        ("badge-2.png", "Add the jobs", [[("Name, duration, and what power it needs: ", ""), ("grid", "ab"), (", ", ""), ("generator", "ab"), (" or ", ""), ("none", "ab"), (".", "")]]),
+        ("badge-3.png", "Place them automatically", [[("No job needing grid power may ", ""), ("ever", "b"), (" land inside a cut. Plan shown beside the cut bars.", "")]]),
+        ("badge-4.png", "Count generator minutes", [[("The total the plan needs, updating the ", ""), ("moment", "ab"), (" a job is added or removed.", "")]]),
     ]
     cw = (CONTENT_W - Inches(0.75)) / 4
-    for i, (num, title, body) in enumerate(items):
-        numbered_card(s, M + i * (cw + Inches(0.25)), Inches(3.45), cw, Inches(4.4), num, title, body)
+    for i, (badge, title, body) in enumerate(items):
+        numbered_card(s, M + i * (cw + Inches(0.25)), Inches(3.4), cw, Inches(5.9), badge, title, body)
 
     # 4 ----------------------------------------------------------- solution
     s = add_slide(prs)
@@ -334,16 +339,16 @@ def build():
     heading(s, "Most-constrained first.")
     rule(s, Inches(2.9))
     steps = [
-        ("1", "Grid jobs", [[("Cut-free space only. A ", ""), ("hard rule", "ab"),
+        ("badge-a1.png", "Grid jobs", [[("Cut-free space only. A ", ""), ("hard rule", "ab"),
           (" — if no gap is long enough the job is reported, never placed illegally.", "")]]),
-        ("2", "Generator jobs", [[("The slot costing the ", ""), ("fewest generator minutes", "ab"),
+        ("badge-a2.png", "Generator jobs", [[("The slot costing the ", ""), ("fewest generator minutes", "ab"),
           (", not simply the earliest — because that cost is exactly what R4 reports.", "")]]),
-        ("3", "No-power jobs", [[("Parked ", ""), ("inside", "b"), (" the cuts on purpose. A cut costs them nothing, which keeps scarce cut-free time for the rest.", "")]]),
+        ("badge-a3.png", "No-power jobs", [[("Parked ", ""), ("inside", "b"), (" the cuts on purpose. A cut costs them nothing, which keeps scarce cut-free time for the rest.", "")]]),
     ]
     cw = (CONTENT_W - Inches(0.6)) / 3
-    for i, (num, title, body) in enumerate(steps):
-        numbered_card(s, M + i * (cw + Inches(0.3)), Inches(3.45), cw, Inches(3.5), num, title, body)
-    box(s, M, Inches(7.5), CONTENT_W, Inches(1.6),
+    for i, (badge, title, body) in enumerate(steps):
+        numbered_card(s, M + i * (cw + Inches(0.3)), Inches(3.4), cw, Inches(5.2), badge, title, body)
+    box(s, M, Inches(9.05), CONTENT_W, Inches(1.6),
         [[("Within each group: ", ""), ("rush orders first", "ab"),
           (", then ", ""), ("earliest promised time", "ab"),
           (", then longest. The result is ", ""), ("deterministic", "b"),
@@ -390,10 +395,10 @@ def build():
     cw = (CONTENT_W - Inches(0.75)) / 4
     for i, (title, body) in enumerate(extras):
         x = M + i * (cw + Inches(0.25))
-        rect(s, x, Inches(3.45), cw, Inches(4.3), fill=CARD, line_color=LINE)
-        rect(s, x + Inches(0.45), Inches(3.9), Inches(0.9), Inches(0.14), fill=AMBER, radius=False)
-        box(s, x + Inches(0.45), Inches(4.35), cw - Inches(0.9), Inches(0.7), [[(title, "b")]], size=23)
-        box(s, x + Inches(0.45), Inches(5.25), cw - Inches(0.9), Inches(2.2), body, size=15,
+        rect(s, x, Inches(3.45), cw, Inches(5.85), fill=CARD, line_color=LINE)
+        rect(s, x + Inches(0.45), Inches(3.95), Inches(0.9), Inches(0.14), fill=AMBER, radius=False)
+        box(s, x + Inches(0.45), Inches(4.45), cw - Inches(0.9), Inches(0.9), [[(title, "b")]], size=23)
+        box(s, x + Inches(0.45), Inches(5.6), cw - Inches(0.9), Inches(3.4), body, size=16,
             color=INK_SOFT, line=1.35)
 
     # 8 ----------------------------------------------------------- testing
@@ -401,6 +406,7 @@ def build():
     eyebrow(s, "07  ·  Proof")
     heading(s, "Proven, not claimed.")
     rule(s, Inches(2.9))
+    asset(s, "mark-tick.png", W - M - Inches(1.5), Inches(9.45), Inches(1.5))
     box(s, M, Inches(3.4), Inches(9.4), Inches(5.5),
         [[("69 automated tests", "ab")],
          [("Four rules are asserted for every plan, on hand-written cases and on all ", ""), ("25 published cases", "b"), (":", "")],
@@ -410,9 +416,10 @@ def build():
          [("· every placement respects its ready and promised times", "")],
          [("Writing the tests first found a real defect: the planner had been giving generator jobs the earliest slot instead of the cheapest, ", ""), ("inflating the R4 total", "ab"), (".", "")]],
         size=19, color=INK_SOFT, line=1.4, space_after=14)
+    rect(s, M + Inches(10.2), Inches(3.3), Inches(7.1), Inches(5.9), fill=CARD, line_color=LINE)
     s.shapes.add_picture(os.path.join(ASSETS, "chart-donut.png"),
-                         M + Inches(10.4), Inches(3.3), height=Inches(5.0))
-    box(s, M + Inches(10.4), Inches(8.5), Inches(6.6), Inches(0.8),
+                         M + Inches(11.85), Inches(3.6), height=Inches(4.2), width=Inches(4.2))
+    box(s, M + Inches(10.7), Inches(8.05), Inches(6.1), Inches(1.0),
         [[("The other 36 are genuinely impossible — jobs longer than the whole day, or needing more uninterrupted cut-free time than exists.", "")]],
         size=14, color=INK_SOFT, align=PP_ALIGN.CENTER, line=1.3)
 
@@ -420,9 +427,8 @@ def build():
     s = add_slide(prs)
     eyebrow(s, "08  ·  Measured, not guessed")
     heading(s, "Generator minutes, case by case.")
-    s.shapes.add_picture(os.path.join(ASSETS, "chart-generator.png"),
-                         M, Inches(3.3), width=CONTENT_W)
-    box(s, M, Inches(8.9), CONTENT_W, Inches(1.4),
+    bottom = place_picture(s, "chart-generator.png", M, Inches(3.15), CONTENT_W)
+    box(s, M, bottom + Inches(0.45), CONTENT_W, Inches(1.4),
         [[("1,845 generator minutes", "ab"), (" across 25 cases. Every number here comes from running the real engine over the organisers' own fixture — ", ""), ("no case was hand-picked", "b"), (".", "")]],
         size=19, color=INK_SOFT, line=1.4)
 
@@ -433,6 +439,7 @@ def build():
     s.shapes.add_picture(os.path.join(ASSETS, "frame-phone.png"),
                          M + Inches(0.4), Inches(3.1), height=Inches(7.0))
     bx = M + Inches(6.4)
+    asset(s, "mark-cursor.png", W - M - Inches(2.0), Inches(9.15), Inches(1.9))
     box(s, bx, Inches(3.4), Inches(10.5), Inches(1.0),
         [[("lsh26-t033-p01.vercel.app", "ab")]], size=36)
     box(s, bx, Inches(4.6), Inches(10.5), Inches(4.4),
@@ -452,7 +459,13 @@ def build():
         size=20, line=1.5)
 
     out = os.path.join(HERE, "LSH26-T033-P01.pptx")
-    prs.save(out)
+    tmp = os.path.join(HERE, ".build.pptx")
+    prs.save(tmp)
+    try:
+        os.replace(tmp, out)
+    except PermissionError:
+        print("!! Close the deck in PowerPoint -- it is locked. Built copy left at", tmp)
+        return
     print("saved", out, "with", len(prs.slides.__iter__.__self__._sldIdLst), "slides")
 
 

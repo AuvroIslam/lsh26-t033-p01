@@ -10,25 +10,25 @@
   "sample_data": {
     "loads_published_fixture": true,
     "method": "One click on 'Load published sample data' loads the bundled fixture; 'Upload JSON' accepts any file in the same P01 shape, including unpublished cases. A case picker switches between the 25 cases.",
-    "reset_instructions": "Press 'Reset' in the Sample data panel. It clears all cuts and jobs and restores 09:00-21:00 working hours. State lives in localStorage under 'lsh26-t033-p01/state/v1', so clearing site data has the same effect."
+    "reset_instructions": "Press 'Reset' in the Sample data panel. It clears every cut and job and restores 09:00-21:00 working hours, 1 machine and an unlimited generator. State lives in localStorage under 'lsh26-t033-p01/state/v1', so clearing site data has the same effect."
   },
-  "problem_solving_method": "The four items are one hard scheduling rule (a grid job must never touch a power cut) plus the cost of the resulting plan (total generator minutes). All scheduling logic is kept in plain TypeScript in src/domain/ with no React, so it can be tested directly and read without running anything. The interface stores only the working hours, the cuts and the jobs; the plan is derived on every render and never stored, so the R4 total cannot drift from what is on screen. Jobs are placed most-constrained first: grid jobs, then generator-capable jobs, then jobs needing no power, which are parked inside cuts on purpose to keep cut-free time for jobs that need it.",
+  "problem_solving_method": "The four items are one hard scheduling rule (a grid job must never touch a power cut) plus the cost of the resulting plan (total generator minutes). All scheduling logic is plain TypeScript in src/domain/ with no React, so it can be tested directly and read without running anything. The interface stores only working hours, machines, fuel budget, cuts and jobs; the plan is derived on every render and never stored, so the R4 total cannot drift from what is on screen. Jobs are placed most-constrained first - grid, then generator, then no-power - and within each group rush orders first, then earliest promised time, then longest. Verification is by invariants asserted for every plan and applied to all 25 published cases, plus interface tests through the DOM: 69 tests in total.",
   "requirements": {
     "R1": {
       "status": "complete",
-      "evidence": "Enter power cuts as start and end times, drawn on the 24-hour timeline. src/components/Inputs.tsx (CutsPanel), src/components/Timeline.tsx"
+      "evidence": "Enter power cuts as start and end times, drawn on the 24-hour timeline; cuts outside opening hours are still shown, and a cut crossing midnight is split. src/components/Inputs.tsx (CutsPanel), src/components/Timeline.tsx, src/state.ts"
     },
     "R2": {
       "status": "complete",
-      "evidence": "Add jobs with name, minutes and power need (grid, generator, none). src/components/Inputs.tsx (JobsPanel)"
+      "evidence": "Add jobs with name, minutes and power need (grid, generator, none), plus optional ready time, promised time and rush flag. src/components/Inputs.tsx (JobsPanel)"
     },
     "R3": {
       "status": "complete",
-      "evidence": "Automatic placement with grid jobs never inside a cut; plan row sits directly under the cut row on the same scale. src/domain/schedule.ts, src/components/Timeline.tsx, src/components/PlanPanel.tsx"
+      "evidence": "Automatic placement with grid jobs never inside a cut; the plan row sits directly under the cut row on the same scale, one row per machine. src/domain/schedule.ts, src/components/Timeline.tsx, src/components/PlanPanel.tsx"
     },
     "R4": {
       "status": "complete",
-      "evidence": "Total generator minutes card, recomputed from state on every add or remove. src/App.tsx, src/components/Timeline.tsx (GeneratorSummary)"
+      "evidence": "Total generator minutes card, recomputed from state on every add or remove, with a fuel-budget meter when a budget is set. src/App.tsx, src/components/Timeline.tsx (GeneratorSummary)"
     }
   },
   "team_members": [
@@ -66,29 +66,31 @@
     }
   ],
   "major_design_decisions": [
-    "One worktop: jobs run one at a time and never overlap, because the problem gives a single timeline and no count of machines or staff.",
-    "Jobs are not split across a cut; a 90 minute job needs 90 uninterrupted minutes.",
+    "Each machine runs one job at a time and jobs are never split; a 90 minute job needs 90 uninterrupted minutes.",
     "Generator minutes count only the time a generator-capable job actually spends inside a cut, so the number means fuel rather than duration.",
-    "A generator job takes the slot overlapping the cuts by the least, not simply the earliest slot, because that overlap is exactly what R4 reports.",
+    "A generator job takes the slot overlapping the cuts by the least, not simply the earliest, because that overlap is exactly what R4 reports.",
     "Jobs needing no power are placed inside cuts on purpose, keeping scarce cut-free time for grid jobs.",
     "An unplaceable job is listed with the reason and the largest gap available, never hidden and never placed illegally.",
+    "Promised times are hard constraints: a job that cannot finish in time is reported rather than quietly scheduled late.",
     "The plan is derived from state on every render and never stored, so the R4 total cannot go stale.",
-    "A compaction pass that pulls jobs earlier only when it costs no extra generator minutes was written and measured during the event. It changed none of the 25 published cases, so it was removed rather than left in as untested complexity.",
-    "Cuts are merged, drawn in full on the 24-hour timeline even when outside opening hours (R1 asks for the cuts entered), but only the part inside the working window affects the plan.",
-    "A cut running past midnight is split at midnight when stored, so no code downstream has to handle an end time earlier than its start."
+    "Cuts are merged and drawn in full on the 24-hour timeline even when outside opening hours (R1 asks for the cuts entered), but only the part inside the working window affects the plan.",
+    "A cut running past midnight is split at midnight when stored, so no code downstream handles an end earlier than its start.",
+    "Multiple machines, promised times, ready times, rush orders and a generator fuel budget were added as real-shop constraints; all are optional and the defaults reproduce single-machine behaviour exactly.",
+    "A compaction pass that pulls jobs earlier only when it costs no extra generator minutes was written and measured during the event. It changed none of the 25 published cases, so it was removed rather than left in as untested complexity."
   ],
   "known_limitations": [
-    "The scheduler is greedy and optimises for generator minutes ahead of the number of jobs placed. Across the 25 published cases 36 jobs go unplaced; most are genuinely impossible (PUB-12 asks for 2145 minutes of work in a 720-minute day; PUB-14's unplaced grid jobs need 195 and 180 uninterrupted cut-free minutes when the longest cut-free gap is 150). PUB-25 is the exception: one further job would fit if a generator job were pushed into a cut, which would raise the number R4 reports. The problem does not rank those two outcomes, so the planner keeps the generator total lowest and reports what did not fit.",
-    "Jobs cannot be dragged or repositioned by hand; the plan is computed.",
+    "The scheduler is greedy and optimises for generator minutes ahead of the number of jobs placed. Across the 25 published cases 36 jobs go unplaced; most are genuinely impossible (PUB-12 asks for 2145 minutes of work in a 720-minute day; PUB-14's unplaced grid jobs need 195 and 180 uninterrupted cut-free minutes when the longest cut-free gap is 150). PUB-25 is the exception: one further job would fit if a generator job were pushed into a cut, which would raise the number R4 reports. The problem does not rank those outcomes, so the planner keeps the generator total lowest and reports what did not fit.",
+    "Jobs cannot be dragged or repositioned by hand, and cannot be pinned to a chosen time.",
     "One day is modelled. An overnight cut is split correctly but work is not carried into the next day.",
     "No print or export of the plan.",
-    "State is per browser via localStorage, so it is not shared between devices and a private window starts empty."
+    "State is per browser via localStorage, so it is not shared between devices and a private window starts empty.",
+    "Machines are interchangeable; there is no notion of a job that needs one specific press."
   ],
   "ai_tools_used": [
     {
       "tool": "Claude (Anthropic), via Claude Code",
-      "used_for": "Repository scaffolding, the scheduling engine in src/domain/, the interface in src/components/, both test suites and the documentation.",
-      "how_output_was_verified": "The team read the code, ran the full suite of 50 tests including all 25 published fixture cases, and checked each of the four required items by hand in the running application."
+      "used_for": "Repository scaffolding, the scheduling engine in src/domain/, the interface in src/components/, both test suites, the README and the presentation generator in Slide/.",
+      "how_output_was_verified": "The team read the code, ran all 69 tests including every published fixture case, and checked each of the four required items by hand in the running application."
     }
   ],
   "licenses_file": "LICENSES.md",

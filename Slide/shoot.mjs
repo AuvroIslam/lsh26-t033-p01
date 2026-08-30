@@ -37,9 +37,17 @@ const mobile = await phone.newPage();
 await mobile.goto(URL, { waitUntil: 'networkidle' });
 await mobile.getByRole('button', { name: /Load published sample data/i }).click();
 await mobile.waitForTimeout(1000);
-// Show the generator headline and the plan, not the empty small hours.
-await mobile.locator('text=Total generator minutes').scrollIntoViewIfNeeded();
-await mobile.waitForTimeout(500);
+// Back to the top, and pan the timeline to the working hours so the bars show
+// rather than the empty small hours.
+await mobile.evaluate(() => {
+  window.scrollTo(0, 0);
+  document.querySelectorAll('div').forEach((el) => {
+    if (el.scrollWidth > el.clientWidth + 40) {
+      el.scrollLeft = el.scrollWidth * 0.33;
+    }
+  });
+});
+await mobile.waitForTimeout(600);
 await mobile.screenshot({ path: `${OUT}/shot-phone.png` });
 await phone.close();
 

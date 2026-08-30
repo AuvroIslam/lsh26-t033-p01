@@ -111,10 +111,11 @@ export function Timeline({ plan }: { plan: Plan }) {
             )}
           </Row>
           ))}
-
-          <Legend />
         </div>
       </div>
+
+      {/* Outside the scroll container: the legend must not pan with the bars. */}
+      <Legend />
     </section>
   );
 }
@@ -176,7 +177,7 @@ function Legend() {
     ['bg-idle', 'Needs no power'],
   ];
   return (
-    <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 pl-28">
+    <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 sm:pl-28">
       {items.map(([color, label]) => (
         <li key={label} className="flex items-center gap-2 text-xs font-medium text-ink-soft">
           <span className={`inline-block h-2.5 w-5 rounded-full ${color}`} />
