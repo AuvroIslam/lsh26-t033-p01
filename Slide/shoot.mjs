@@ -1,3 +1,10 @@
+// Screenshot capture for the deck. Playwright is deliberately NOT a project
+// dependency -- judges should not download a browser to run this app. Install
+// it ad hoc when regenerating the images:
+//
+//   npm i -D playwright && npx playwright install chromium
+//   node Slide/shoot.mjs
+//   npm uninstall playwright
 import { chromium } from 'playwright';
 
 const URL = process.env.SHOT_URL ?? 'https://lsh26-t033-p01.vercel.app';
