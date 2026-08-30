@@ -6,10 +6,20 @@ Solution for **LofiStack Hackathon 2026 — P01**
 - **Team ID:** `LSH26-T033`
 - **Problem:** `P01 — Load-Shedding Window Planner` (Tier 01)
 - **Live application:** <https://lsh26-t033-p01.vercel.app>
-- **Presentation:** [`Slide/LSH26-T033-P01.pptx`](Slide/LSH26-T033-P01.pptx) — also as images in [`Slide/png/`](Slide/png/)
+- **Presentation:** [**View the slides**](https://docs.google.com/presentation/d/12Vf_FUQm3nEeculQZRHJ6AxHEu0to_xM/edit?usp=drive_link&ouid=101782489806446060113&rtpof=true&sd=true) — source file [`Slide/LSH26-T033-P01.pptx`](Slide/LSH26-T033-P01.pptx)
 - **Demo video:** not supplied; the method and per-member contributions are recorded below and in the manifest
 
 > Judges evaluate only the exact commit SHA entered in the Final Submission Form.
+
+---
+
+## The problem
+
+Load shedding takes hours out of the working day. A print shop runs on machines that need mains
+power, so when the grid goes down mid-job the work is lost — paper wasted, deadline missed, customer
+waiting. The cuts are announced in advance; what is missing is a way to plan the day around them.
+
+![Load shedding wastes the working day](Slide/png/02-problem.png)
 
 ---
 
@@ -48,6 +58,8 @@ unchanged unless you use them.
 | **Ready from** | A job cannot start before its material or artwork arrives | Work is not always ready at opening time |
 | **Rush order** | Marks a job urgent; it takes the front of the day within its power class | Every shop has a job that jumps the queue |
 | **Generator fuel budget** | Caps the generator minutes the plan may spend; a job that would break the cap is reported | Diesel is bought by the litre. The budget is a real constraint, not a preference |
+
+![Built for a real shop](Slide/png/07-real-shop.png)
 
 ---
 
@@ -118,6 +130,8 @@ loads — the only fetch is the bundled sample-data file, and even that is optio
 The important property is the direction of the arrows: **the scheduling rules never depend on
 React.** `src/domain/` is plain TypeScript that can be run, tested and read on its own.
 
+![The rules are not in the interface](Slide/png/06-architecture.png)
+
 ```mermaid
 flowchart TB
     subgraph browser["Browser — the whole application"]
@@ -170,6 +184,8 @@ the jobs on screen, which is exactly what R4 demands. It also makes the whole sc
 function — the same input always produces the same plan, which is what makes it testable.
 
 ### How a plan is built
+
+![Most-constrained first](Slide/png/05-algorithm.png)
 
 ```mermaid
 flowchart TB
@@ -270,6 +286,8 @@ not look right; the font files are in [`Slide/assets/`](Slide/assets/).
 
 ## Testing
 
+![Proven, not claimed](Slide/png/08-proof.png)
+
 `npm test` runs **69 tests** — 58 over the domain and 11 driving the real interface in a DOM.
 
 | Suite | Covers |
@@ -295,6 +313,8 @@ search described above.
 
 ### Measured on the published data
 
+![Generator minutes, case by case](Slide/png/09-measured.png)
+
 Running the engine over the organisers' own fixture — no case hand-picked:
 
 | Metric | Value |
@@ -312,22 +332,6 @@ and the largest gap that was available. See [Known limitations](#known-limitatio
 where a better plan does exist.
 
 Regenerate these numbers with `npx vite-node Slide/stats.ts`.
-
----
-
-## Presentation
-
-Eleven slides, in [`Slide/LSH26-T033-P01.pptx`](Slide/LSH26-T033-P01.pptx) and as PNGs in
-[`Slide/png/`](Slide/png/). Built reproducibly by [`Slide/build_deck.py`](Slide/build_deck.py) —
-every chart is generated from the engine's own output, and the screenshots are captured from the
-live site by [`Slide/shoot.mjs`](Slide/shoot.mjs).
-
-| | | |
-|---|---|---|
-| ![Title](Slide/png/01-title.png) | ![The problem](Slide/png/02-problem.png) | ![Four required items](Slide/png/03-required-items.png) |
-| ![Our solution](Slide/png/04-solution.png) | ![How the plan is built](Slide/png/05-algorithm.png) | ![Architecture](Slide/png/06-architecture.png) |
-| ![Built for a real shop](Slide/png/07-real-shop.png) | ![Proof](Slide/png/08-proof.png) | ![Measured](Slide/png/09-measured.png) |
-| ![Live](Slide/png/10-live.png) | ![Thank you](Slide/png/11-thank-you.png) | |
 
 ---
 
@@ -440,3 +444,9 @@ Commit count alone does not represent contribution.
 - [`EVENT.md`](EVENT.md) — event start code and pre-event-material declaration
 - [`evaluation-manifest.json`](evaluation-manifest.json) — structured judging evidence
 - [`LICENSES.md`](LICENSES.md) — frameworks, libraries, fonts, icons and assets
+
+---
+
+[**View the full presentation**](https://docs.google.com/presentation/d/12Vf_FUQm3nEeculQZRHJ6AxHEu0to_xM/edit?usp=drive_link&ouid=101782489806446060113&rtpof=true&sd=true)
+
+![Thank you](Slide/png/11-thank-you.png)
