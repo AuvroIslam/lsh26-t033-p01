@@ -1,4 +1,5 @@
-import { parseTime } from './domain/time';
+import { DAY_MINUTES, parseTime } from './domain/time';
+import { splitOvernight } from './domain/intervals';
 import type { Job, PowerCut, PowerNeed } from './domain/types';
 import type { FixtureCase } from './domain/fixture';
 
@@ -43,13 +44,18 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'setWindow':
       return { ...state, windowStart: action.start, windowEnd: action.end };
 
-    case 'addCut':
+    case 'addCut': {
+      // A cut running past midnight is stored as the one or two real spans it
+      // covers, so nothing downstream has to cope with an end before its start.
+      const spans = splitOvernight(action.start, action.end, DAY_MINUTES).map((span) => ({
+        id: newId(),
+        ...span,
+      }));
       return {
         ...state,
-        cuts: [...state.cuts, { id: newId(), start: action.start, end: action.end }].sort(
-          (a, b) => a.start - b.start,
-        ),
+        cuts: [...state.cuts, ...spans].sort((a, b) => a.start - b.start),
       };
+    }
 
     case 'removeCut':
       return { ...state, cuts: state.cuts.filter((cut) => cut.id !== action.id) };

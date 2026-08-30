@@ -19,7 +19,7 @@ const POWER_LABEL: Record<string, string> = {
  * directly beneath so the two line up minute for minute (R1 and R3).
  */
 export function Timeline({ plan }: { plan: Plan }) {
-  const { window, cuts, placements } = plan;
+  const { window, enteredCuts, placements } = plan;
 
   return (
     <section className="lift rounded-3xl bg-shell p-5 sm:p-7">
@@ -55,8 +55,8 @@ export function Timeline({ plan }: { plan: Plan }) {
           </div>
 
           <Row label="Power cuts" window={window}>
-            {cuts.length === 0 && <Empty>No power cuts entered</Empty>}
-            {cuts.map((cut) => (
+            {enteredCuts.length === 0 && <Empty>No power cuts entered</Empty>}
+            {enteredCuts.map((cut) => (
               <div
                 key={`${cut.start}-${cut.end}`}
                 className="absolute inset-y-1 flex items-center justify-center overflow-hidden rounded-lg bg-cut text-[11px] font-bold text-white"

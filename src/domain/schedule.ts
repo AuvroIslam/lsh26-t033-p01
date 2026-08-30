@@ -61,8 +61,11 @@ export function buildPlan(input: ScheduleInput): Plan {
     end: Math.max(input.window.start, input.window.end),
   };
 
-  // A cut outside opening hours cannot affect the plan, so clamp it away.
-  const cuts = normalize(input.cuts.flatMap((cut) => intersect(cut, [window])));
+  // Shown in full on the timeline, because a cut is real even when the shop is
+  // shut. Only the part inside opening hours can affect the plan, so the
+  // scheduler works from the clamped set.
+  const enteredCuts = normalize(input.cuts);
+  const cuts = normalize(enteredCuts.flatMap((cut) => intersect(cut, [window])));
 
   let free: Interval[] = length(window) > 0 ? [{ ...window }] : [];
   const placements: Placement[] = [];
@@ -121,6 +124,7 @@ export function buildPlan(input: ScheduleInput): Plan {
 
   return {
     window,
+    enteredCuts,
     cuts,
     placements,
     unplaced,

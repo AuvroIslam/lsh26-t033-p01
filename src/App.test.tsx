@@ -39,6 +39,16 @@ describe('the planner in a browser', () => {
     expect(screen.getByTitle('Power cut 11:00 to 13:00')).toBeDefined();
   });
 
+  it('R1 — a cut running past midnight is kept, split at midnight', () => {
+    render(<App />);
+    fireEvent.change(screen.getByLabelText(/Cut starts/i), { target: { value: '22:00' } });
+    fireEvent.change(screen.getByLabelText(/Cut ends/i), { target: { value: '02:00' } });
+    fireEvent.click(screen.getByRole('button', { name: /Add cut/i }));
+
+    expect(screen.getByTitle('Power cut 00:00 to 02:00')).toBeDefined();
+    expect(screen.getByTitle('Power cut 22:00 to 24:00')).toBeDefined();
+  });
+
   it('R2 and R3 — an added grid job is scheduled clear of the cut', () => {
     render(<App />);
     fireEvent.change(screen.getByLabelText(/Cut starts/i), { target: { value: '09:00' } });

@@ -124,6 +124,19 @@ describe('R3 — grid jobs never fall inside a power cut', () => {
     assertPlanIsValid(plan);
   });
 
+  it('still shows a cut that falls entirely outside opening hours', () => {
+    // R1 asks for entered cuts on a 24-hour timeline, so an out-of-hours cut
+    // must survive for display even though it cannot affect the plan.
+    const plan = buildPlan({
+      window: window('09:00', '17:00'),
+      cuts: [cut('22:00', '23:00')],
+      jobs: [],
+    });
+
+    expect(plan.enteredCuts).toEqual([{ start: at('22:00'), end: at('23:00') }]);
+    expect(plan.cuts).toEqual([]);
+  });
+
   it('ignores the part of a cut that falls outside opening hours', () => {
     const plan = buildPlan({
       window: window('09:00', '18:00'),
@@ -132,6 +145,7 @@ describe('R3 — grid jobs never fall inside a power cut', () => {
     });
 
     expect(plan.cuts).toEqual([]);
+    expect(plan.enteredCuts).toHaveLength(2);
     expect(placementOf(plan, 'All day grid job')?.start).toBe(at('09:00'));
     assertPlanIsValid(plan);
   });

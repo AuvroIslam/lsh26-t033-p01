@@ -29,7 +29,7 @@ server and no key.
 | R3 — Jobs placed automatically so grid jobs never fall inside a cut, plan shown next to the cut bars | Complete | **Planned jobs** row sits directly under the **Power cuts** row on the same scale; written plan in **The plan** panel. [`src/domain/schedule.ts`](src/domain/schedule.ts) |
 | R4 — Total generator minutes shown, updating as soon as a job is added or removed | Complete | **Total generator minutes** card, top right. Recomputed from state on every change. [`src/App.tsx`](src/App.tsx), [`src/components/Timeline.tsx`](src/components/Timeline.tsx) → `GeneratorSummary` |
 
-Each requirement also has automated tests. `npm test` runs 50 of them, including every one of the
+Each requirement also has automated tests. `npm test` runs 52 of them, including every one of the
 25 published fixture cases:
 
 ```
@@ -80,7 +80,7 @@ npm run dev        # http://localhost:5173
 ```
 
 ```bash
-npm test           # 50 tests
+npm test           # 52 tests
 npm run build      # type-check and produce dist/
 npm run preview    # serve the production build
 ```
@@ -157,8 +157,13 @@ Commit count alone does not represent contribution.
   and the size of the largest gap that was available.
 - **The plan is derived, never stored.** R4 asks for a number that updates as soon as a job changes;
   deriving it removes any chance of it lagging behind.
-- **Cuts are merged and clamped.** Overlapping or touching cuts become one outage, and the parts of
-  a cut falling outside opening hours are dropped, so they cannot distort the plan.
+- **Cuts are merged, and shown in full but applied only inside opening hours.** Overlapping or
+  touching cuts become one outage. A cut is still drawn on the 24-hour timeline when it falls outside
+  opening hours, because R1 asks for the cuts the user entered; only the part inside the working
+  window can affect the plan.
+- **A cut running past midnight is split at midnight when it is stored.** Entering `22:00`–`02:00`
+  records `22:00`–`24:00` and `00:00`–`02:00`, so nothing downstream has to reason about an end time
+  earlier than its start.
 
 ## Known limitations
 

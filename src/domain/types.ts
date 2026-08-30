@@ -44,7 +44,12 @@ export interface UnplacedJob {
 
 export interface Plan {
   window: Interval;
-  /** Cuts after merging and clamping to the working window. */
+  /**
+   * Every cut as entered, merged but not clamped. R1 asks for the cuts to be
+   * shown on a 24-hour timeline, including any that fall outside opening hours.
+   */
+  enteredCuts: Interval[];
+  /** Cuts after merging and clamping to the working window; drives the plan. */
   cuts: Interval[];
   placements: Placement[];
   unplaced: UnplacedJob[];

@@ -158,8 +158,8 @@ export function CutsPanel({
       return;
     }
     setError(null);
-    // An end before the start is read as an overnight cut and split by the
-    // planner, so it is accepted rather than rejected.
+    // An end before the start means the cut runs past midnight. It is split
+    // into its real spans when stored, rather than being rejected.
     dispatch({ type: 'addCut', start: from, end: to });
   };
 
