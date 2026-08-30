@@ -2,7 +2,7 @@ import { useEffect, useMemo, useReducer } from 'react';
 
 import { buildPlan } from './domain/schedule';
 import { GeneratorSummary, Timeline } from './components/Timeline';
-import { CutsPanel, DataPanel, JobsPanel, WindowPanel } from './components/Inputs';
+import { CutsPanel, DataPanel, IconTile, JobsPanel, WindowPanel } from './components/Inputs';
 import { PlanPanel } from './components/PlanPanel';
 import { loadState, reducer, saveState } from './state';
 
@@ -30,7 +30,7 @@ export default function App() {
       <div className="lift-shell mx-auto max-w-6xl rounded-[2rem] bg-shell p-4 sm:p-8">
         <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <span className="h-9 w-9 rounded-xl bg-accent" aria-hidden="true" />
+            <IconTile name="pylon" size={52} />
             <div>
               <h1 className="text-2xl font-extrabold tracking-tight text-ink">
                 Load-Shedding Window Planner

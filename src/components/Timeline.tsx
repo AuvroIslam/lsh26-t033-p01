@@ -1,5 +1,6 @@
 import { DAY_MINUTES, formatDuration, formatTime } from '../domain/time';
 import type { Plan } from '../domain/types';
+import { IconTile } from './Inputs';
 
 const HOURS = Array.from({ length: 25 }, (_, hour) => hour);
 
@@ -20,12 +21,15 @@ export function Timeline({ plan }: { plan: Plan }) {
 
   return (
     <section className="lift rounded-3xl bg-shell p-5 sm:p-7">
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3.5">
+          <IconTile name="calendar" size={48} />
+          <div>
           <h2 className="text-xl font-extrabold tracking-tight text-ink">24-hour timeline</h2>
           <p className="mt-0.5 text-sm text-ink-faint">
             Every job placed around today's cuts, on one scale
           </p>
+          </div>
         </div>
         <p className="rounded-full bg-panel px-3 py-1.5 text-xs font-semibold tabular-nums text-ink-soft">
           Open {formatTime(window.start)} – {formatTime(window.end)}
@@ -176,13 +180,18 @@ export function GeneratorSummary({ plan }: { plan: Plan }) {
   const onGenerator = plan.placements.filter((placement) => placement.generatorMinutes > 0);
   return (
     <div className="lift rounded-3xl bg-accent-soft p-6">
-      <p className="text-xs font-bold tracking-widest text-accent-deep uppercase">
-        Total generator minutes
-      </p>
-      <p className="mt-2 text-6xl font-extrabold tracking-tight tabular-nums text-ink">
-        {plan.totalGeneratorMinutes}
-      </p>
-      <p className="mt-2 text-sm font-medium text-accent-deep">
+      <div className="flex items-start gap-3.5">
+        <IconTile name="battery" size={48} />
+        <div className="min-w-0">
+          <p className="text-xs font-bold tracking-widest text-accent-deep uppercase">
+            Total generator minutes
+          </p>
+          <p className="mt-1 text-6xl leading-none font-extrabold tracking-tight tabular-nums text-ink">
+            {plan.totalGeneratorMinutes}
+          </p>
+        </div>
+      </div>
+      <p className="mt-3 text-sm font-medium text-accent-deep">
         {plan.totalGeneratorMinutes === 0
           ? 'No job needs the generator in this plan.'
           : `${formatDuration(plan.totalGeneratorMinutes)} across ${onGenerator.length} job${

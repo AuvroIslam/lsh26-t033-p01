@@ -22,19 +22,41 @@ const quietButtonClass =
 
 const labelClass = 'block text-[11px] font-bold tracking-wide text-ink-soft uppercase';
 
+/** A decorative tile from the project's own icon set. */
+export function IconTile({ name, size = 44 }: { name: string; size?: number }) {
+  return (
+    <img
+      src={`${import.meta.env.BASE_URL}icons/${name}.png`}
+      alt=""
+      aria-hidden="true"
+      width={size}
+      height={size}
+      className="shrink-0 rounded-2xl"
+      style={{ width: size, height: size }}
+    />
+  );
+}
+
 export function Panel({
   title,
   description,
+  icon,
   children,
 }: {
   title: string;
   description?: string;
+  icon?: string;
   children: React.ReactNode;
 }) {
   return (
     <section className="lift rounded-3xl bg-shell p-5 sm:p-6">
-      <h2 className="text-lg font-extrabold tracking-tight text-ink">{title}</h2>
-      {description && <p className="mt-1 mb-4 text-sm text-ink-faint">{description}</p>}
+      <div className="mb-4 flex items-start gap-3.5">
+        {icon && <IconTile name={icon} />}
+        <div className="min-w-0">
+          <h2 className="text-lg font-extrabold tracking-tight text-ink">{title}</h2>
+          {description && <p className="mt-0.5 text-sm text-ink-faint">{description}</p>}
+        </div>
+      </div>
       {children}
     </section>
   );
@@ -70,7 +92,11 @@ export function WindowPanel({ state, dispatch }: { state: AppState; dispatch: (a
   };
 
   return (
-    <Panel title="Working hours" description="Jobs are only scheduled inside this window.">
+    <Panel
+      title="Working hours"
+      description="Jobs are only scheduled inside this window."
+      icon="stopwatch"
+    >
       <div className="grid grid-cols-2 gap-3">
         <label className={labelClass}>
           Opens
@@ -129,7 +155,11 @@ export function CutsPanel({
   };
 
   return (
-    <Panel title="Today's power cuts" description="Add each announced cut as a start and end time.">
+    <Panel
+      title="Today's power cuts"
+      description="Add each announced cut as a start and end time."
+      icon="warning"
+    >
       <form onSubmit={submit} className="flex flex-wrap items-end gap-2.5">
         <label className={`min-w-24 flex-1 ${labelClass}`}>
           Cut starts
@@ -210,7 +240,11 @@ export function JobsPanel({ jobs, dispatch }: { jobs: Job[]; dispatch: (a: Actio
   };
 
   return (
-    <Panel title="Jobs" description="Each job has a name, a duration and what power it needs.">
+    <Panel
+      title="Jobs"
+      description="Each job has a name, a duration and what power it needs."
+      icon="clipboard"
+    >
       <form onSubmit={submit} className="space-y-3">
         <div className="flex flex-wrap gap-2.5">
           <label className={`min-w-40 flex-[2] ${labelClass}`}>
@@ -340,6 +374,7 @@ export function DataPanel({
     <Panel
       title="Sample data"
       description="Load the published cases, or upload any file in the same shape."
+      icon="meter"
     >
       <div className="flex flex-wrap gap-2.5">
         <button type="button" onClick={loadBundled} className={buttonClass}>

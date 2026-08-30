@@ -13,12 +13,27 @@ export function PlanPanel({ plan }: { plan: Plan }) {
   return (
     <Panel
       title="The plan"
+      icon="charge"
       description={
         plan.placements.length === 0
           ? 'Nothing scheduled yet.'
           : `${plan.placements.length} job${plan.placements.length === 1 ? '' : 's'} scheduled, ${formatDuration(plan.scheduledMinutes)} of work, ${formatDuration(plan.idleMinutes)} idle.`
       }
     >
+      {plan.placements.length === 0 && plan.unplaced.length === 0 && (
+        <div className="flex flex-col items-center px-4 py-6 text-center">
+          <img
+            src={`${import.meta.env.BASE_URL}mascot.png`}
+            alt=""
+            aria-hidden="true"
+            className="w-44 max-w-full"
+          />
+          <p className="mt-4 max-w-xs text-sm font-medium text-ink-faint">
+            Add today's power cuts and the jobs waiting to be done, and the plan appears here.
+          </p>
+        </div>
+      )}
+
       {plan.placements.length > 0 && (
         <ol className="divide-y divide-hairline border-t border-hairline">
           {plan.placements.map((placement) => {
