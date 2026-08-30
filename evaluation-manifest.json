@@ -35,34 +35,24 @@
     {
       "registered_name": "Oitijya Islam Auvro",
       "github_username": "AuvroIslam",
-      "major_contribution": "Scheduling engine and domain model: the placement order, the cut-free constraint for grid jobs, and the cheapest-slot search that minimises generator minutes.",
+      "major_contribution": "Built this project end to end: the scheduling engine and domain model, the interface, both test suites, the documentation, the presentation and the deployment. All 17 commits in this repository are his.",
       "evidence_paths_or_commits": [
-        "src/domain/schedule.ts",
-        "src/domain/intervals.ts",
-        "src/domain/time.ts"
+        "src/",
+        "Slide/",
+        "every commit in this repository"
       ]
     },
     {
       "registered_name": "Md. Nafiz Ahmed",
       "github_username": "Nafiz001",
-      "major_contribution": "Interface: the 24-hour timeline with aligned cut and plan rows, the cut and job entry forms with validation, and the live generator-minutes summary.",
-      "evidence_paths_or_commits": [
-        "src/components/Timeline.tsx",
-        "src/components/Inputs.tsx",
-        "src/components/PlanPanel.tsx",
-        "src/App.tsx"
-      ]
+      "major_contribution": "Idea generation and shaping of the approach for P01, and production of the team's demo video. He did not contribute code to this repository; his implementation work is in the P12 repository.",
+      "evidence_paths_or_commits": []
     },
     {
       "registered_name": "Dewan Salman Rahman Zisan",
       "github_username": "ripWr3ncH",
-      "major_contribution": "Fixture loading and verification: reading the published case format, the upload path for judges' own cases, and the test suites covering all 25 published cases.",
-      "evidence_paths_or_commits": [
-        "src/domain/fixture.ts",
-        "src/domain/schedule.test.ts",
-        "src/App.test.tsx",
-        "src/state.ts"
-      ]
+      "major_contribution": "Idea generation and shaping of the approach for P01. He did not contribute code to this repository; his implementation work is in the P12 repository.",
+      "evidence_paths_or_commits": []
     }
   ],
   "major_design_decisions": [

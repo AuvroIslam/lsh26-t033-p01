@@ -372,13 +372,16 @@ See [`LICENSES.md`](LICENSES.md) for all third-party material.
 
 ## Team contributions
 
-> Each member confirms the line below is an accurate record of their own work.
+All 17 commits in this repository were authored by **Oitijya Islam Auvro**; `git log` shows this
+plainly. The other two members' implementation work for the team is in the P12 repository, and their
+contribution here was to the thinking and the presentation rather than to this codebase. It is
+recorded honestly below rather than divided up to look even.
 
-| Registered member | GitHub username | Major contribution | Evidence |
+| Registered member | GitHub username | Major contribution to P01 | Evidence |
 | --- | --- | --- | --- |
-| Oitijya Islam Auvro | `AuvroIslam` | Scheduling engine and domain model: the placement order, the cut-free constraint for grid jobs, and the cheapest-slot search that minimises generator minutes. | `src/domain/schedule.ts`, `src/domain/intervals.ts`, `src/domain/time.ts` |
-| Md. Nafiz Ahmed | `Nafiz001` | Interface: the 24-hour timeline with aligned cut and machine rows, the cut and job entry forms with validation, and the live generator-minutes summary. | `src/components/Timeline.tsx`, `src/components/Inputs.tsx`, `src/components/PlanPanel.tsx`, `src/App.tsx` |
-| Dewan Salman Rahman Zisan | `ripWr3ncH` | Fixture loading and verification: reading the published case format, the upload path for judges' own cases, and the test suites covering all 25 published cases. | `src/domain/fixture.ts`, `src/domain/schedule.test.ts`, `src/App.test.tsx`, `src/state.ts` |
+| Oitijya Islam Auvro | `AuvroIslam` | Built this project end to end: the scheduling engine and domain model, the interface, both test suites, the documentation, the presentation and the deployment. | Every commit in this repository — `git log` |
+| Md. Nafiz Ahmed | `Nafiz001` | Idea generation and shaping of the approach. Produced the team's demo video. | Not reflected in this repository's history; see the demo video and the P12 repository |
+| Dewan Salman Rahman Zisan | `ripWr3ncH` | Idea generation and shaping of the approach. | Not reflected in this repository's history; see the P12 repository |
 
 Commit count alone does not represent contribution.
 
